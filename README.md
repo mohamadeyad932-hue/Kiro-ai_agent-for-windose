@@ -1,2 +1,2 @@
 # Kiro-ai_agent-for-windose
-وكيل ذكاء صنعي ذكي لترتيب الملفات داخل نظام ويندوز وتجميع الملفات المتشابه ضمن مجلدات خاصة 
+A smart AI agent works in the background to sort and organize text and image files within the Windows system and group similar files into specific folders.
