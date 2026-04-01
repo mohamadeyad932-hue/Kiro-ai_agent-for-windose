@@ -1,0 +1,10 @@
+venv/ 
+node_modules/ 
+__pycache__/ 
+bert_local_model/
+*.pt
+*.bin
+*.safetensors
+*.csv
+*.mp4
+*.exe

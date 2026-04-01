@@ -1,0 +1,8 @@
+PyMuPDF
+python-docx
+torch
+chromadb
+numpy
+transformers
+watchdog
+PySide6
