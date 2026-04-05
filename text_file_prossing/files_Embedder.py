@@ -20,7 +20,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 # ─────────────── الإعدادات ───────────────
 
 EXTENSIONS = {'.txt', '.pdf', '.docx'}
-MODEL_PATH = r"c:\Users\eyad\Desktop\Kiro-ai_agent-for-windose\bert_local_model"
+MODEL_PATH = r"c:\Users\eyad\Desktop\Kiro-ai_agent-for-windose\models\sbert_high_res"
 HOME       = os.path.expanduser('~')
 OUTPUT_DIR = os.path.dirname(os.path.abspath(__file__))
 
