@@ -8,3 +8,5 @@ bert_local_model/
 *.csv
 *.mp4
 *.exe
+clip_local_model/ 
+
