@@ -111,7 +111,7 @@ def main():
             clustering = AgglomerativeClustering(
                 n_clusters=None, 
                 metric='cosine', 
-                distance_threshold=0.15,
+                distance_threshold=0.40,
                 linkage='average'
             )
             clusters = clustering.fit_predict(np.array(valid_vectors))
