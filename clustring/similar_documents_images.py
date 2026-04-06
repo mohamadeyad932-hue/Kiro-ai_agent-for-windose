@@ -1,14 +1,9 @@
 """
-Similar images grouped into sets for: documents
-Automatically generated based on CLIP embeddings clustering
+مجموعات الصور المتشابهة: documents
 """
 
-# Set contains 1 highly similar images
+# 2 صور متشابهة
 documents_img_group_1 = {
-    r"C:\Users\owner\Documents\desert sample3.jpg",
-}
-
-# Set contains 1 highly similar images
-documents_img_group_2 = {
-    r"C:\Users\owner\Documents\freezland sample3.jpg",
+    "ajs1980518-waterfall-5365926": ".jpg",
+    "bertvthul-avenue-815297_1920": ".jpg",
 }

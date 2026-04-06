@@ -1,29 +1,24 @@
 """
-Similar images grouped into sets for: desktop
-Automatically generated based on CLIP embeddings clustering
+مجموعات الصور المتشابهة: desktop
 """
 
-# Set contains 1 highly similar images
+# 3 صور متشابهة
 desktop_img_group_1 = {
-    r"C:\Users\owner\Desktop\Golden Retriever sample2.jpg",
+    "Golden Retriever sample2": ".jpg",
+    "Husky sample2": ".jpg",
+    "petfoto-dog-8198719_640": ".jpg",
 }
 
-# Set contains 1 highly similar images
+# 2 صور متشابهة
 desktop_img_group_2 = {
-    r"C:\Users\owner\Desktop\Husky sample2.jpg",
+    "Moderncar sample2": ".jpg",
+    "classic-car sample2": ".jpg",
 }
 
-# Set contains 1 highly similar images
+# 4 صور متشابهة
 desktop_img_group_3 = {
-    r"C:\Users\owner\Desktop\Moderncar sample2.jpg",
-}
-
-# Set contains 1 highly similar images
-desktop_img_group_4 = {
-    r"C:\Users\owner\Desktop\classic-car sample2.jpg",
-}
-
-# Set contains 1 highly similar images
-desktop_img_group_5 = {
-    r"C:\Users\owner\Desktop\landscape.jpg",
+    "mibro-car-8136746_1920": ".jpg",
+    "mibro-car-racing-4394450_1920": ".jpg",
+    "mibro-car-racing-6540687_1920": ".jpg",
+    "mibro-race-car-7624025_1920": ".jpg",
 }

@@ -1,5 +1,5 @@
 """
-images_pipeline.py
+clustring_file_images.py
 الخط الكامل لمعالجة الصور في مشروع Kiro
 المرحلة 1: كشف المكررات ونقلها (Perceptual Hashing)
 المرحلة 2: تجميع الصور المتبقية (CLIP + Clustering)
@@ -23,6 +23,7 @@ except ImportError:
 
 try:
     from sklearn.cluster import AgglomerativeClustering
+    from sklearn.metrics import pairwise_distances
 except ImportError:
     print("pip install scikit-learn numpy")
     sys.exit(1)
@@ -124,7 +125,7 @@ def save_duplicates_script(duplicate_groups):
     all_duplicates = {}
     for group in duplicate_groups:
         sorted_group = sorted(group)
-        for dup_path in sorted_group[1:]:  # الأول يبقى، الباقي مكررات
+        for dup_path in sorted_group[1:]:
             name, ext = os.path.splitext(os.path.basename(dup_path))
             all_duplicates[name] = ext.lower()
 
@@ -148,7 +149,7 @@ def save_duplicates_script(duplicate_groups):
 
 def move_duplicates(duplicate_groups):
     """نقل المكررات لمجلد خاص وإرجاع مسارات الصور المنقولة"""
-    moved_paths = set()  # ← مهم: بنرجعها للمرحلة الثانية تتجاهلها
+    moved_paths = set()
 
     if not duplicate_groups:
         print("\n✅ لم يتم العثور على صور مكررة.")
@@ -173,7 +174,7 @@ def move_duplicates(duplicate_groups):
                 dest = os.path.join(DUPLICATES_DIR, f"{name}_dup{i}{ext}")
             try:
                 shutil.move(dup, dest)
-                moved_paths.add(dup)  # ← نسجل المسار قبل النقل
+                moved_paths.add(dup)
                 print(f"    🔁 نُقل: {os.path.basename(dup)}")
             except Exception as e:
                 print(f"    ⚠ خطأ في النقل: {e}")
@@ -205,6 +206,23 @@ def run_duplicate_detection():
 # ═══════════════════════════════════════════════
 # المرحلة 2: التجميع
 # ═══════════════════════════════════════════════
+
+def find_best_threshold(vectors):
+    """
+    حساب العتبة المثلى تلقائياً بناءً على البيانات
+    بتحسب المسافات بين كل الصور وتاخد ربع الأقرب لبعض
+    هيك كل مجلد بيحسب عتبته الخاصة بناءً على صوره
+    """
+    if len(vectors) < 3:
+        return 0.3  # قيمة افتراضية لو البيانات قليلة
+
+    distances = pairwise_distances(vectors, metric="cosine")
+    # خذ المسافات الفريدة من المثلث العلوي بس (بدون تكرار)
+    upper = distances[np.triu_indices_from(distances, k=1)]
+    # ربع المسافات الأقرب — يضمن تجميع المتشابه فقط
+    threshold = np.percentile(upper, 25)
+    return round(float(threshold), 3)
+
 
 def save_image_cluster_scripts(folder_name, folder_groups):
     """حفظ المجموعات في ملفات .py"""
@@ -252,7 +270,6 @@ def run_clustering(moved_paths):
         for name, ext in files_dict.items():
             full_path = os.path.normpath(os.path.join(folder_path, name + ext))
 
-            # ← هون الدمج: تجاهل الصور المنقولة كمكررات + التحقق من الوجود
             if full_path in moved_paths:
                 continue
             if not os.path.exists(full_path):
@@ -270,10 +287,14 @@ def run_clustering(moved_paths):
 
         print(f"  - عدد الصور الصالحة للتجميع: {len(valid_paths)}")
 
+        # ← حساب العتبة تلقائياً بناءً على صور هاد المجلد تحديداً
+        threshold = find_best_threshold(valid_vectors)
+        print(f"  - العتبة المحسوبة تلقائياً: {threshold}")
+
         clustering = AgglomerativeClustering(
             n_clusters=None,
             metric="cosine",
-            distance_threshold=0.26,
+            distance_threshold=threshold,
             linkage="average",
         )
         clusters = clustering.fit_predict(np.array(valid_vectors))
