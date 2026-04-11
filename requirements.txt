@@ -1,8 +1,24 @@
+# ─── النماذج والذكاء الاصطناعي ───
+torch
+transformers
+sentence-transformers
+safetensors
+
+# ─── معالجة الملفات النصية ───
 PyMuPDF
 python-docx
-torch
-chromadb
+
+# ─── معالجة الصور ───
+Pillow
+imagehash
+
+# ─── التجميع والحساب ───
+scikit-learn
 numpy
-transformers
-watchdog
+scipy
+
+# ─── واجهة المستخدم ───
 PySide6
+
+# ─── أدوات مساعدة ───
+watchdog

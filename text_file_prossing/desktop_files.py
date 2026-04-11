@@ -3,11 +3,12 @@
 توليد تلقائي
 """
 
-# جميع الملفات ذات اللواحق المستهدفة (10 ملف)
+# جميع الملفات ذات اللواحق المستهدفة (11 ملف)
 desktop_file = {
     "CV9": ".pdf",
     "ML-Lec1 (1)": ".pdf",
     "ML-Lec2": ".pdf",
+    "ML-Lec3": ".pdf",
     "cmputer vision": ".docx",
     "output": ".txt",
     "prodact": ".docx",

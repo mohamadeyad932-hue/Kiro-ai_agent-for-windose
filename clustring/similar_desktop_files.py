@@ -9,8 +9,9 @@ desktop_group_1 = {
     r"C:\Users\eyad\Desktop\CV9.pdf",
 }
 
-# Set contains 2 highly similar files
+# Set contains 3 highly similar files
 desktop_group_2 = {
+    r"C:\Users\eyad\Desktop\ML-Lec3.pdf",
     r"C:\Users\eyad\Desktop\ML-Lec1 (1).pdf",
     r"C:\Users\eyad\Desktop\ML-Lec2.pdf",
 }

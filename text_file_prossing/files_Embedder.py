@@ -41,10 +41,28 @@ print(f"تم التحميل على: {device}\n")
 
 # ─────────────── دوال القراءة ───────────────
 
+
+def _read_txt(path):
+    """قراءة ملف نصي مع إغلاق الملف بشكل صحيح."""
+    with open(path, 'r', encoding='utf-8', errors='ignore') as f:
+        return f.read()
+
+
+def _read_pdf(path):
+    """قراءة ملف PDF مع إغلاق الملف بشكل صحيح."""
+    with fitz.open(path) as doc:
+        return "".join(page.get_text() for page in doc)
+
+
+def _read_docx(path):
+    """قراءة ملف Word."""
+    return "\n".join(par.text for par in docx.Document(path).paragraphs if par.text.strip())
+
+
 READERS = {
-    ".txt":  lambda p: open(p, 'r', encoding='utf-8', errors='ignore').read(),
-    ".pdf":  lambda p: "".join(page.get_text() for page in fitz.open(p)),
-    ".docx": lambda p: "\n".join(par.text for par in docx.Document(p).paragraphs if par.text.strip()),
+    ".txt":  _read_txt,
+    ".pdf":  _read_pdf,
+    ".docx": _read_docx,
 }
 
 # ─────────────── الدوال الأساسية ───────────────
@@ -70,14 +88,60 @@ def scan_folder(path):
 
     return files_dict
 
-def get_embedding(text):
-    """إرسال النص إلى BERT والحصول على بصمة 768 بُعد."""
-    inputs = tokenizer(text, return_tensors="pt", truncation=True, max_length=512, padding=True).to(device)
+def _embed_single_chunk(input_ids, attention_mask):
+    """تمرير chunk واحد عبر BERT وإرجاع vector بعد Mean Pooling."""
     with torch.no_grad():
-        outputs = model(**inputs)
-    mask   = inputs['attention_mask'].unsqueeze(-1).float()
+        outputs = model(input_ids=input_ids, attention_mask=attention_mask)
+    mask = attention_mask.unsqueeze(-1).float()
     pooled = (outputs.last_hidden_state * mask).sum(dim=1) / mask.sum(dim=1)
-    return pooled.squeeze().cpu().numpy().tolist()
+    return pooled.squeeze(0)  # شكل: (768,)
+
+
+def get_embedding(text, chunk_size=512, overlap=50):
+    """
+    تقسيم النص إلى أجزاء (chunks) وتوليد بصمة 768 بُعد تمثل الملف كاملاً.
+
+    - chunk_size: حجم كل جزء بالـ tokens (الحد الأقصى لـ BERT = 512)
+    - overlap: عدد tokens المتداخلة بين الأجزاء لضمان عدم ضياع السياق
+    """
+    # تقطيع النص كاملاً بدون قطع
+    all_tokens = tokenizer(text, add_special_tokens=False)['input_ids']
+
+    # إذا النص قصير بما يكفي، نعالجه مباشرة
+    usable_size = chunk_size - 2  # خصم 2 لـ [CLS] و [SEP]
+    if len(all_tokens) <= usable_size:
+        inputs = tokenizer(text, return_tensors="pt", truncation=True,
+                           max_length=chunk_size, padding=True).to(device)
+        return _embed_single_chunk(inputs['input_ids'], inputs['attention_mask']).cpu().numpy().tolist()
+
+    # تقسيم النص الطويل إلى أجزاء متداخلة
+    cls_id = tokenizer.cls_token_id
+    sep_id = tokenizer.sep_token_id
+    step = usable_size - overlap
+    chunk_vectors = []
+
+    for start in range(0, len(all_tokens), step):
+        chunk_ids = all_tokens[start:start + usable_size]
+
+        # إضافة [CLS] في البداية و [SEP] في النهاية
+        chunk_ids = [cls_id] + chunk_ids + [sep_id]
+        attn_mask = [1] * len(chunk_ids)
+
+        # padding إذا كان الجزء الأخير أقصر
+        pad_len = chunk_size - len(chunk_ids)
+        if pad_len > 0:
+            chunk_ids += [tokenizer.pad_token_id] * pad_len
+            attn_mask += [0] * pad_len
+
+        input_ids = torch.tensor([chunk_ids], device=device)
+        attention_mask = torch.tensor([attn_mask], device=device)
+
+        vec = _embed_single_chunk(input_ids, attention_mask)
+        chunk_vectors.append(vec)
+
+    # حساب معدل بصمات كل الأجزاء → vector واحد يمثل الملف كاملاً
+    final_vector = torch.stack(chunk_vectors).mean(dim=0)
+    return final_vector.cpu().numpy().tolist()
 
 def save_file_list_script(folder_name, files_dict):
     """حفظ قائمة الملفات في سكربت."""

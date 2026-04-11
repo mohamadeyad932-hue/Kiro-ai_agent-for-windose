@@ -20,9 +20,7 @@ sys.stdout.reconfigure(encoding="utf-8")
 
 EXTENSIONS = {".png", ".jpg", ".jpeg", ".bmp", ".webp"}
 # تحديد مسار الموديل المحلي الخاص بكِ ليعمل بدون إنترنت
-MODEL_PATH = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "..", "clip_local_model")
-)
+MODEL_PATH = r"C:\Users\eyad\Desktop\Kiro-ai_agent-for-windose\models\clip_local_model"
 HOME = os.path.expanduser("~")
 OUTPUT_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -72,13 +70,14 @@ def scan_folder(path):
 
 def get_embedding(image_path):
     """إرسال الصورة إلى CLIP والحصول على بصمة 512 بُعد."""
-    image = Image.open(image_path).convert("RGB")
-    inputs = processor(images=image, return_tensors="pt").to(device)
+    with Image.open(image_path) as img:
+        image = img.convert("RGB")
+        inputs = processor(images=image, return_tensors="pt").to(device)
 
     with torch.no_grad():
         outputs = model.get_image_features(**inputs)
 
-    # تسوية البصمة وتجهيزها (تطابق طريقة إياد)
+    # تسوية البصمة وتجهيزها
     return outputs.squeeze().cpu().numpy().tolist()
 
 

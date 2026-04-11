@@ -272,9 +272,7 @@ def run_clustering(moved_paths):
 
         clustering = AgglomerativeClustering(
             n_clusters=None,
-            metric="cosine",
-            distance_threshold=0.26,
-            linkage="average",
+            distance_threshold=5.0  # مناسب لمتجهات CLIP (المسافات بين 2.77 و 11.91)
         )
         clusters = clustering.fit_predict(np.array(valid_vectors))
 
