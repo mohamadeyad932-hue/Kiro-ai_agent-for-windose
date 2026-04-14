@@ -91,6 +91,10 @@ def compute_hashes(all_images):
         try:
             img = Image.open(path).convert("RGB")
             hashes[path] = imagehash.phash(img)
+        except PermissionError:
+            print(f"  ⚠ الصورة قيد الاستخدام (مقفولة). تم التخطي: {os.path.basename(path)}")
+        except FileNotFoundError:
+            print(f"  ⚠ اختفت الصورة (ربما نُقلت الآن): {os.path.basename(path)}")
         except Exception as e:
             print(f"  ⚠ خطأ: {os.path.basename(path)} → {e}")
     return hashes
@@ -175,6 +179,10 @@ def move_duplicates(duplicate_groups):
                 shutil.move(dup, dest)
                 moved_paths.add(dup)  # ← نسجل المسار قبل النقل
                 print(f"    🔁 نُقل: {os.path.basename(dup)}")
+            except PermissionError:
+                print(f"    ⚠ فشل النقل، الصورة قيد الاستخدام (مقفولة): {os.path.basename(dup)}")
+            except FileNotFoundError:
+                print(f"    ⚠ اختفت الصورة قبل نقلها بلحظات: {os.path.basename(dup)}")
             except Exception as e:
                 print(f"    ⚠ خطأ في النقل: {e}")
 

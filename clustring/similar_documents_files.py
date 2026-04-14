@@ -15,10 +15,10 @@ documents_group_2 = {
 
 # Set contains 4 highly similar files
 documents_group_3 = {
-    r"C:\Users\eyad\Documents\تقرير عن مشروع مادة خوارزميات البحث.docx",
-    r"C:\Users\eyad\Documents\تقرير عن erp.docx",
-    r"C:\Users\eyad\Documents\تقرير عن erp - for merge.docx",
     r"C:\Users\eyad\Documents\تقرير عن مساعد ERP.pdf",
+    r"C:\Users\eyad\Documents\تقرير عن erp.docx",
+    r"C:\Users\eyad\Documents\تقرير عن مشروع مادة خوارزميات البحث.docx",
+    r"C:\Users\eyad\Documents\تقرير عن erp - for merge.docx",
 }
 
 # Set contains 2 highly similar files

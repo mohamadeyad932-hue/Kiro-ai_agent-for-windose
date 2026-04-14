@@ -50,60 +50,58 @@ class SidebarButton(QPushButton):
         self.page_id = page_id
         self.icon_text = icon_text
         self.nav_key = nav_key
+        self._is_active = False
         self._update_text()
         self.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setFixedHeight(42)
         self.clicked.connect(lambda: on_click(page_id))
-        self.set_inactive()
+        self._apply_style()
         lang_manager.language_changed.connect(self._on_lang_changed)
 
     def _update_text(self):
         text = t(self.nav_key)
-        if lang_manager.is_rtl:
-            self.setText(f"{text}   {self.icon_text}")
-        else:
-            self.setText(f"{self.icon_text}   {text}")
+        # وضع الأيقونة دائماً قبل النص (في بداية السطر حسب اتجاه اللغة)
+        self.setText(f"{self.icon_text}   {text}")
 
     def set_active(self):
-        align = "right" if lang_manager.is_rtl else "left"
-        pad = "padding-right" if lang_manager.is_rtl else "padding-left"
-        self.setStyleSheet(f"""
-            QPushButton {{
-                background: rgba(0, 210, 255, 0.12);
-                color: {COLORS['violet_d']};
-                border-radius: 10px;
-                text-align: {align};
-                {pad}: 15px;
-                border: none;
-            }}
-        """)
+        self._is_active = True
+        self._apply_style()
 
     def set_inactive(self):
-        align = "right" if lang_manager.is_rtl else "left"
-        pad = "padding-right" if lang_manager.is_rtl else "padding-left"
-        self.setStyleSheet(f"""
-            QPushButton {{
-                background-color: transparent;
-                color: {COLORS['ink3']};
-                border-radius: 10px;
-                text-align: {align};
-                {pad}: 15px;
-                border: none;
-            }}
-            QPushButton:hover {{
-                background-color: rgba(255, 255, 255, 0.05);
-            }}
-        """)
+        self._is_active = False
+        self._apply_style()
+
+    def _apply_style(self):
+        if self._is_active:
+            self.setStyleSheet(f"""
+                QPushButton {{
+                    background: rgba(76, 194, 255, 0.12);
+                    color: {COLORS['cyan']};
+                    border-radius: 10px;
+                    text-align: left;
+                    padding-left: 15px;
+                    border: none;
+                }}
+            """)
+        else:
+            self.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: transparent;
+                    color: {COLORS['ink3']};
+                    border-radius: 10px;
+                    text-align: left;
+                    padding-left: 15px;
+                    border: none;
+                }}
+                QPushButton:hover {{
+                    background-color: rgba(0, 0, 0, 0.05);
+                }}
+            """)
 
     def _on_lang_changed(self, lang):
         self._update_text()
-        # Re-apply active/inactive style to fix text-align direction
-        # We check by color if active
-        if COLORS['violet_dim'] in self.styleSheet():
-            self.set_active()
-        else:
-            self.set_inactive()
+        self._apply_style()
 
 
 class KiroApp(QMainWindow):
@@ -114,6 +112,12 @@ class KiroApp(QMainWindow):
         self.setWindowTitle(t("app_title"))
         self.resize(WINDOW_WIDTH, WINDOW_HEIGHT)
         self.setMinimumSize(900, 600)
+        
+        # تحميل الصورة لتكون خلفية
+        import os
+        from PyQt6.QtGui import QPixmap
+        img_path = os.path.join(os.path.dirname(__file__), "Picture1.png")
+        self._bg_pixmap = QPixmap(img_path)
 
         self.current_page = "sp"
         self.nav_history = []  # سجل التنقل
@@ -124,14 +128,14 @@ class KiroApp(QMainWindow):
 
         self._build_ui()
         self.navigate("sp")
-
+        
         lang_manager.language_changed.connect(self._on_lang_changed)
 
     def _build_ui(self):
         central = QWidget()
         self.setCentralWidget(central)
         outer_layout = QVBoxLayout(central)
-        outer_layout.setContentsMargins(15, 2, 15, 12)  # تقليل الهامش العلوي لرفع قسم العنوان
+        outer_layout.setContentsMargins(15, 2, 15, 12)
         outer_layout.setSpacing(0)
 
         # ─── شريط العنوان العلوي ───
@@ -175,6 +179,7 @@ class KiroApp(QMainWindow):
             QFrame#mainFrame {{
                 background-color: transparent;
                 border-bottom-left-radius: 14px;
+                border-bottom-right-radius: 14px;
                 border: 1px solid {COLORS['border']};
                 border-top: none;
             }}
@@ -202,10 +207,10 @@ class KiroApp(QMainWindow):
         self._labels["version"].setFixedSize(110, 28)
         self._labels["version"].setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._labels["version"].setStyleSheet(f"""
-            background-color: rgba(255, 255, 255, 0.08);
+            background-color: rgba(0, 0, 0, 0.05);
             color: {COLORS['violet_d']};
             border-radius: 14px;
-            border: 1px solid rgba(0, 210, 255, 0.2);
+            border: 1px solid rgba(0, 0, 0, 0.1);
         """)
 
         # ─── زر تبديل اللغة ───
@@ -215,9 +220,9 @@ class KiroApp(QMainWindow):
         self.lang_btn.setFont(QFont("Segoe UI", 13, QFont.Weight.Bold))
         self.lang_btn.setStyleSheet(f"""
             QPushButton {{
-                background-color: rgba(0, 210, 255, 0.15);
+                background-color: rgba(76, 194, 255, 0.15);
                 color: {COLORS['violet_d']};
-                border: 1px solid rgba(0, 210, 255, 0.3);
+                border: 1px solid rgba(76, 194, 255, 0.3);
                 border-radius: 10px;
             }}
             QPushButton:hover {{
@@ -235,13 +240,13 @@ class KiroApp(QMainWindow):
         self.menu_btn.setFont(QFont("Segoe UI", 14))
         self.menu_btn.setStyleSheet(f"""
             QPushButton {{
-                background-color: rgba(255,255,255,0.05);
+                background-color: rgba(0,0,0,0.04);
                 color: {COLORS['ink']};
                 border: 1px solid {COLORS['border']};
                 border-radius: 10px;
             }}
             QPushButton:hover {{
-                background-color: rgba(0, 210, 255, 0.1);
+                background-color: rgba(0, 120, 215, 0.1);
                 color: {COLORS['violet_d']};
             }}
         """)
@@ -254,13 +259,13 @@ class KiroApp(QMainWindow):
         self.back_btn.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
         self.back_btn.setStyleSheet(f"""
             QPushButton {{
-                background-color: rgba(255,255,255,0.05);
+                background-color: rgba(0,0,0,0.04);
                 color: {COLORS['ink']};
                 border: 1px solid {COLORS['border']};
                 border-radius: 10px;
             }}
             QPushButton:hover {{
-                background-color: rgba(0, 210, 255, 0.1);
+                background-color: rgba(0, 120, 215, 0.1);
                 border: 1px solid {COLORS['violet_d']};
             }}
         """)
@@ -268,13 +273,13 @@ class KiroApp(QMainWindow):
         self.back_btn.clicked.connect(self._go_back)
         self.back_btn.hide()
 
-        topbar_layout.addWidget(self._labels["version"])
-        topbar_layout.addSpacing(8)
-        topbar_layout.addWidget(self.lang_btn)
-        topbar_layout.addStretch()
-        topbar_layout.addWidget(self.back_btn)
-        topbar_layout.addSpacing(4)
         topbar_layout.addWidget(self.menu_btn)
+        topbar_layout.addSpacing(4)
+        topbar_layout.addWidget(self.back_btn)
+        topbar_layout.addStretch()
+        topbar_layout.addWidget(self.lang_btn)
+        topbar_layout.addSpacing(8)
+        topbar_layout.addWidget(self._labels["version"])
 
         main_layout.addWidget(self.topbar)
         self.topbar.hide() # إخفاء توب بار في البداية لشاشة الترحيب
@@ -298,26 +303,25 @@ class KiroApp(QMainWindow):
             self.screens[page_id] = screen
             self.stacked_widget.addWidget(screen)
 
-        body_layout.addWidget(main_frame, stretch=1)
-
-        # ─── الشريط الجانبي ───
+        # ─── القائمة الجانبية ───
         self.sidebar = QFrame()
         self.sidebar.setObjectName("sidebar")
         self.sidebar.setFixedWidth(SIDEBAR_WIDTH)
         self.sidebar.setStyleSheet(f"""
             QFrame#sidebar {{
                 background-color: {COLORS['panel']};
+                border-bottom-left-radius: 14px;
                 border-bottom-right-radius: 14px;
                 border: 1px solid {COLORS['border']};
                 border-top: none;
-                border-left: none;
             }}
         """)
         self._build_sidebar()
 
         body_layout.addWidget(self.sidebar)
+        body_layout.addWidget(main_frame, stretch=1)
+        
         self.sidebar.hide()
-
         outer_layout.addWidget(body, stretch=1)
 
     def _build_sidebar(self):
@@ -327,7 +331,6 @@ class KiroApp(QMainWindow):
 
         # ─── الشعار ───
         header = QHBoxLayout()
-        header.setAlignment(lang_manager.align)
 
         titles = QVBoxLayout()
         titles.setSpacing(0)
@@ -350,9 +353,11 @@ class KiroApp(QMainWindow):
         logo.setStyleSheet(f"background-color: {COLORS['violet_d']}; color: white; border-radius: 14px;")
         logo.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
+        # Qt's layoutDirection handles mirroring automatically
         header.addLayout(titles)
         header.addSpacing(10)
         header.addWidget(logo)
+
         layout.addLayout(header)
         layout.addSpacing(4)
 
@@ -401,7 +406,6 @@ class KiroApp(QMainWindow):
         status_box.setStyleSheet(f"QFrame#statusBox {{ background-color: {COLORS['emerald_dim']}; border-radius: 12px; }}")
         sb_layout = QHBoxLayout(status_box)
         sb_layout.setContentsMargins(12, 10, 12, 10)
-        sb_layout.setAlignment(lang_manager.align)
 
         st_text = QVBoxLayout()
         st_text.setSpacing(2)
@@ -423,6 +427,7 @@ class KiroApp(QMainWindow):
         dot.setFixedSize(10, 10)
         dot.setStyleSheet(f"background-color: {COLORS['emerald']}; border-radius: 5px;")
 
+        # Qt's layoutDirection handles mirroring automatically
         sb_layout.addLayout(st_text)
         sb_layout.addSpacing(8)
         sb_layout.addWidget(dot)
@@ -455,7 +460,7 @@ class KiroApp(QMainWindow):
         # إظهار/إخفاء زر العودة والقائمة الجانبية
         if page_id == "sp" or len(self.nav_history) == 0:
             self.back_btn.hide()
-            self.menu_btn.hide()  # إخفاء أيقونة القائمة الجانبية من شاشة الترحيب
+            self.menu_btn.hide()
         else:
             self.back_btn.show()
             self.menu_btn.show()
@@ -473,7 +478,7 @@ class KiroApp(QMainWindow):
         elif not self.sidebar_visible:
             self.sidebar.show()
             self.sidebar_visible = True
-            self.findChild(QFrame, "mainFrame").setStyleSheet(f"QFrame#mainFrame {{ background: transparent; border-bottom-left-radius: 14px; border: 1px solid {COLORS['border']}; border-top: none; border-right: none; }}")
+            self.findChild(QFrame, "mainFrame").setStyleSheet(f"QFrame#mainFrame {{ background: transparent; border-bottom-left-radius: 14px; border-bottom-right-radius: 14px; border: 1px solid {COLORS['border']}; border-top: none; }}")
 
         if page_id == "pr" and kwargs.get("start_processing"):
             self.screens["pr"].start_processing()
@@ -486,7 +491,7 @@ class KiroApp(QMainWindow):
         else:
             self.sidebar.show()
             self.sidebar_visible = True
-            self.findChild(QFrame, "mainFrame").setStyleSheet(f"QFrame#mainFrame {{ background: transparent; border-bottom-left-radius: 14px; border: 1px solid {COLORS['border']}; border-top: none; border-right: none; }}")
+            self.findChild(QFrame, "mainFrame").setStyleSheet(f"QFrame#mainFrame {{ background: transparent; border-bottom-left-radius: 14px; border-bottom-right-radius: 14px; border: 1px solid {COLORS['border']}; border-top: none; }}")
 
     def _go_back(self):
         """العودة للصفحة السابقة"""
@@ -518,7 +523,6 @@ class KiroApp(QMainWindow):
                 self.back_btn.show()
                 self.menu_btn.show()
 
-            # إظهار/إخفاء الشريط الجانبي
             if prev == "sp":
                 self.sidebar.hide()
                 self.sidebar_visible = False
@@ -526,12 +530,13 @@ class KiroApp(QMainWindow):
             elif not self.sidebar_visible:
                 self.sidebar.show()
                 self.sidebar_visible = True
-                self.findChild(QFrame, "mainFrame").setStyleSheet(f"QFrame#mainFrame {{ background: transparent; border-bottom-left-radius: 14px; border: 1px solid {COLORS['border']}; border-top: none; border-right: none; }}")
+                self.findChild(QFrame, "mainFrame").setStyleSheet(f"QFrame#mainFrame {{ background: transparent; border-bottom-left-radius: 14px; border-bottom-right-radius: 14px; border: 1px solid {COLORS['border']}; border-top: none; }}")
 
     def _on_lang_changed(self, lang):
         """تحديث كل النصوص عند تغيير اللغة"""
         QApplication.instance().setLayoutDirection(lang_manager.direction)
-
+        
+        # ─── تحديث النصوص ───
         self.setWindowTitle(t("app_title"))
         self.lang_btn.setText(t("lang_btn"))
         self.back_btn.setText(t("back_btn"))
@@ -544,14 +549,34 @@ class KiroApp(QMainWindow):
         self._labels["status1"].setAlignment(lang_manager.align)
         self._labels["status2"].setText(t("sidebar_status2"))
         self._labels["status2"].setAlignment(lang_manager.align)
+        self._labels["brand"].setText(t("sidebar_brand"))
         self._labels["brand"].setAlignment(lang_manager.align)
         self._labels["brand_sub"].setAlignment(lang_manager.align)
+
+    def paintEvent(self, event):
+        """رسم الصورة كخلفية للتطبيق بأكمله"""
+        from PyQt6.QtGui import QPainter, QColor
+        from PyQt6.QtCore import Qt
+        p = QPainter(self)
+        p.setRenderHint(QPainter.RenderHint.Antialiasing)
+        
+        if hasattr(self, '_bg_pixmap') and not self._bg_pixmap.isNull():
+            # تمديد الصورة على حجم النافذة
+            scaled_pixmap = self._bg_pixmap.scaled(self.size(), Qt.AspectRatioMode.IgnoreAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            p.drawPixmap(0, 0, scaled_pixmap)
+            
+            # طبقة فاتحة فوق الصورة (Light Overlay) ليتناسب مع الثيم الجديد
+            p.fillRect(self.rect(), QColor(255, 255, 255, 190))
+        p.end()
 
 
 def main():
     app = QApplication(sys.argv)
-    app.setStyleSheet(GLOBAL_STYLESHEET)
+    
+    # تطبيق اتجاه الواجهة (RTL/LTR) على كامل التطبيق دفعة واحدة
     app.setLayoutDirection(lang_manager.direction)
+    
+    app.setStyleSheet(GLOBAL_STYLESHEET)
 
     window = KiroApp()
     window.show()

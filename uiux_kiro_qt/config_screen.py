@@ -3,23 +3,19 @@ Kiro AI - Configuration Screen (PyQt6) - Bilingual
 شاشة التهيئة واختيار المسارات وأنواع البيانات
 """
 import sys
+import os
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
                              QPushButton, QFrame, QScrollArea, QGridLayout,
-                             QGraphicsDropShadowEffect, QApplication, QSlider)
+                             QGraphicsDropShadowEffect, QApplication,
+                             QLineEdit, QFileDialog, QMessageBox)
 from PyQt6.QtCore import Qt, pyqtProperty, QPropertyAnimation, pyqtSignal, QEasingCurve
 from PyQt6.QtGui import QFont, QColor, QPainter, QBrush
 from translations import lang_manager, t
 
-# ── لوحة الألوان الموحدة ──────────────────────────────────────────
-BG_DEEP     = "#020650"
-BG_MID      = "#050F26"
-CYAN        = "#00D2FF"
-BLUE        = "#1A73E8"
-VIOLET      = "#BD00FF"
-TEXT_MAIN   = "#FFFFFF"
-TEXT_SUB    = "#80A0C0"
-GLASS       = "rgba(255, 255, 255, 0.05)"
-BORDER_CYAN = "rgba(0, 210, 255, 0.4)"
+from theme import (
+    BG_DEEP, BG_MID, CYAN, BLUE, VIOLET,
+    TEXT_MAIN, TEXT_SUB, GLASS, BORDER_CYAN
+)
 
 
 class ToggleSwitch(QWidget):
@@ -60,7 +56,7 @@ class ToggleSwitch(QWidget):
         p = QPainter(self); p.setRenderHint(QPainter.RenderHint.Antialiasing)
         p.setPen(Qt.PenStyle.NoPen)
         # خلفية الزر
-        bg_color = QColor(CYAN) if self._checked else QColor(255, 255, 255, 30)
+        bg_color = QColor(CYAN) if self._checked else QColor(0, 0, 0, 40)
         p.setBrush(QBrush(bg_color))
         p.drawRoundedRect(0, 0, 44, 24, 12, 12)
         # المقبض
@@ -103,18 +99,19 @@ class ToggleRow(QWidget):
         self.s_lbl.setAlignment(lang_manager.align)
         text_layout.addWidget(self.s_lbl)
 
+        self.switch = ToggleSwitch(default_on)
+
+        # Qt's layoutDirection handles mirroring automatically
         row_layout.addWidget(text_widget)
         row_layout.addStretch()
-
-        self.switch = ToggleSwitch(default_on)
         row_layout.addWidget(self.switch)
 
         layout.addWidget(row_widget)
         
-        # فاصل شفاف/باهت
+        # فاصل داكن رقيق
         sep = QFrame()
         sep.setFixedHeight(1)
-        sep.setStyleSheet(f"background-color: rgba(255, 255, 255, 0.05); border: none;")
+        sep.setStyleSheet(f"background-color: rgba(0, 0, 0, 0.08); border: none;")
         layout.addWidget(sep)
 
     def _on_lang_changed(self, lang):
@@ -124,8 +121,50 @@ class ToggleRow(QWidget):
         self.s_lbl.setAlignment(lang_manager.align)
 
 
+class FolderSelectionRow(QWidget):
+    """صف اختيار المجلد المخصص"""
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(16, 16, 16, 16)
+        layout.setSpacing(10)
+        
+        self.lbl = QLabel(t("config_paths_title"))
+        self.lbl.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+        self.lbl.setStyleSheet(f"color: {TEXT_MAIN}; background: transparent;")
+        self.lbl.setAlignment(lang_manager.align)
+        
+        row = QHBoxLayout()
+        self.path_input = QLineEdit()
+        self.path_input.setPlaceholderText("Enter folder path / أدخل مسار المجلد...")
+        self.path_input.setStyleSheet(f"background: rgba(0,0,0,0.04); color: {TEXT_MAIN}; border: 1.5px solid {BORDER_CYAN}; border-radius: 8px; padding: 8px;")
+        
+        self.browse_btn = QPushButton("📁")
+        self.browse_btn.setFixedSize(40, 36)
+        self.browse_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.browse_btn.setStyleSheet(f"QPushButton {{ background: {BLUE}; color: white; border-radius: 8px; font-size: 16px; }} QPushButton:hover {{ background: {CYAN}; }}")
+        self.browse_btn.clicked.connect(self._browse)
+        
+        row.addWidget(self.path_input)
+        row.addWidget(self.browse_btn)
+        
+        layout.addWidget(self.lbl)
+        layout.addLayout(row)
+
+        lang_manager.language_changed.connect(self._on_lang_changed)
+
+    def _browse(self):
+        dir_path = QFileDialog.getExistingDirectory(self, "Select Folder")
+        if dir_path:
+            self.path_input.setText(os.path.normpath(dir_path))
+
+    def _on_lang_changed(self, lang):
+        self.lbl.setText(t("config_paths_title"))
+        self.lbl.setAlignment(lang_manager.align)
+
+
 class ConfigScreen(QWidget):
-    """شاشة التهيئة - تحديد المسارات وأنواع البيانات ودقة الفرز"""
+    """شاشة التهيئة - تحديد المسارات وأنواع البيانات"""
     def __init__(self, on_navigate=None, parent=None):
         super().__init__(parent)
         self.on_navigate = on_navigate
@@ -135,18 +174,8 @@ class ConfigScreen(QWidget):
         lang_manager.language_changed.connect(self._on_lang_changed)
 
     def paintEvent(self, event):
-        from PyQt6.QtGui import QRadialGradient, QLinearGradient
-        p = QPainter(self); p.setRenderHint(QPainter.RenderHint.Antialiasing)
-        W, H = self.width(), self.height()
-        # 1. الخلفية المتدرجة
-        bg = QLinearGradient(0, 0, 0, H)
-        bg.setColorAt(0.0, QColor(BG_DEEP)); bg.setColorAt(0.5, QColor(BG_MID)); bg.setColorAt(1.0, QColor(BG_DEEP))
-        p.fillRect(self.rect(), QBrush(bg))
-        # 2. توهج مركزي
-        cg = QRadialGradient(W/2, H*0.4, W*0.5)
-        cg.setColorAt(0.0, QColor(0, 210, 255, 30)); cg.setColorAt(1.0, QColor(0, 210, 255, 0))
-        p.fillRect(self.rect(), QBrush(cg))
-        p.end()
+        from theme import paint_bg
+        paint_bg(self)
 
     def _build(self):
         scroll_area = QScrollArea()
@@ -184,78 +213,29 @@ class ConfigScreen(QWidget):
 
         self._path_card_lbl, path_card = self._create_card("config_paths_title")
         pc_layout = path_card.layout()
-        pc_layout.addWidget(ToggleRow("config_desktop", "config_desktop_sub", True))
-        pc_layout.addWidget(ToggleRow("config_downloads", "config_downloads_sub", True))
-        pc_layout.addWidget(ToggleRow("config_documents", "config_documents_sub", False))
+        self.folder_selector = FolderSelectionRow()
+        pc_layout.addWidget(self.folder_selector)
+        
+        self.toggle_desktop = ToggleRow("config_desktop", "config_desktop_sub", False)
+        self.toggle_downloads = ToggleRow("config_downloads", "config_downloads_sub", False)
+        self.toggle_documents = ToggleRow("config_documents", "config_documents_sub", False)
+        
+        pc_layout.addWidget(self.toggle_desktop)
+        pc_layout.addWidget(self.toggle_downloads)
+        pc_layout.addWidget(self.toggle_documents)
+        
+        pc_layout.addStretch()
         cards_grid.addWidget(path_card, 0, 0)
 
         self._type_card_lbl, type_card = self._create_card("config_types_title")
         tc_layout = type_card.layout()
         tc_layout.addWidget(ToggleRow("config_text_data", "config_text_data_sub", True))
         tc_layout.addWidget(ToggleRow("config_visual_data", "config_visual_data_sub", True))
-        tc_layout.addWidget(ToggleRow("config_tables", "config_tables_sub", False))
+
         cards_grid.addWidget(type_card, 0, 1)
 
         layout.addWidget(cards_widget)
-        layout.addSpacing(20)
-
-        # ─── بطاقة دقة الفرز ───
-        self._slider_card_lbl, slider_card = self._create_card("config_slider_title")
-        sc_layout = slider_card.layout()
-
-        slider_container = QWidget()
-        slider_layout = QVBoxLayout(slider_container)
-        slider_layout.setContentsMargins(25, 10, 25, 20)
-        slider_layout.setSpacing(10)
-
-        self.pct_label = QLabel("75%")
-        self.pct_label.setFont(QFont("Segoe UI", 28, QFont.Weight.Bold))
-        self.pct_label.setStyleSheet(f"color: {CYAN};")
-        self.pct_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        slider_layout.addWidget(self.pct_label)
-
-        self.accuracy_slider = QSlider(Qt.Orientation.Horizontal)
-        self.accuracy_slider.setRange(0, 100)
-        self.accuracy_slider.setValue(75)
-        self.accuracy_slider.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.accuracy_slider.setSingleStep(5)
-        self.accuracy_slider.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
-        
-        self.accuracy_slider.setStyleSheet(f"""
-            QSlider::groove:horizontal {{
-                border-radius: 4px; height: 6px; background: rgba(255,255,255,0.1);
-            }}
-            QSlider::sub-page:horizontal {{
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 {CYAN}, stop:1 {BLUE}); border-radius: 4px;
-            }}
-            QSlider::handle:horizontal {{
-                background: white; border: 1px solid {CYAN};
-                width: 18px; height: 18px; margin: -6px 0; border-radius: 9px;
-            }}
-        """)
-        self.accuracy_slider.valueChanged.connect(self._update_slider_label)
-        slider_layout.addWidget(self.accuracy_slider)
-
-        labels_layout = QHBoxLayout()
-        # إجبار ترتيب النصوص ليطابق الشريط (يسار = سريع، يمين = بطيء)
-        labels_layout.setDirection(QVBoxLayout.Direction.LeftToRight)
-        
-        self._labels["slider_fast"] = QLabel(t("config_slider_fast"))
-        self._labels["slider_fast"].setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))
-        self._labels["slider_fast"].setStyleSheet(f"color: {TEXT_SUB};")
-
-        self._labels["slider_deep"] = QLabel(t("config_slider_deep"))
-        self._labels["slider_deep"].setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))
-        self._labels["slider_deep"].setStyleSheet(f"color: {TEXT_SUB};")
-
-        labels_layout.addWidget(self._labels["slider_fast"])
-        labels_layout.addStretch()
-        labels_layout.addWidget(self._labels["slider_deep"])
-        slider_layout.addLayout(labels_layout)
-        sc_layout.addWidget(slider_container)
-
-        layout.addWidget(slider_card)
-        layout.addSpacing(25)
+        layout.addSpacing(30)
 
         # ─── زر التشغيل ───
         self._start_btn = QPushButton(t("config_start_btn"))
@@ -279,19 +259,14 @@ class ConfigScreen(QWidget):
         outer.setContentsMargins(0, 0, 0, 0)
         outer.addWidget(scroll_area)
 
-    def _update_slider_label(self, value):
-        self.pct_label.setText(f"{value}%")
-        color = TEXT_SUB if value < 30 else CYAN if value < 70 else VIOLET
-        self.pct_label.setStyleSheet(f"color: {color};")
-
     def _create_card(self, title_key):
         card = QFrame()
         card.setStyleSheet(f"""
             .QFrame {{
-                background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 rgba(255,255,255,0.06), stop:1 rgba(255,255,255,0.01));
+                background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 rgba(0,0,0,0.04), stop:1 rgba(0,0,0,0.01));
                 border-radius: 18px;
-                border: 1px solid rgba(0, 210, 255, 0.1);
-                border-top: 1px solid rgba(255, 255, 255, 0.15);
+                border: 1.5px solid {BORDER_CYAN};
+                border-top: 1px solid rgba(0, 0, 0, 0.08);
             }}
         """)
         card_layout = QVBoxLayout(card)
@@ -312,7 +287,9 @@ class ConfigScreen(QWidget):
         lbl.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))
         lbl.setStyleSheet(f"color: {CYAN}; letter-spacing: 1px;")
 
+        # Qt's layoutDirection handles mirroring automatically
         h_layout.addWidget(dot)
+        h_layout.addSpacing(6)
         h_layout.addWidget(lbl)
         h_layout.addStretch()
 
@@ -324,14 +301,29 @@ class ConfigScreen(QWidget):
         self._labels["title"].setAlignment(lang_manager.align)
         self._labels["sub"].setText(t("config_sub"))
         self._labels["sub"].setAlignment(lang_manager.align)
-        self._labels["slider_fast"].setText(t("config_slider_fast"))
-        self._labels["slider_deep"].setText(t("config_slider_deep"))
         self._start_btn.setText(t("config_start_btn"))
         self._path_card_lbl.setText(t("config_paths_title"))
         self._type_card_lbl.setText(t("config_types_title"))
-        self._slider_card_lbl.setText(t("config_slider_title"))
 
     def _start(self):
-        accuracy_value = self.accuracy_slider.value()
+        path = self.folder_selector.path_input.text().strip()
+        use_desktop = self.toggle_desktop.switch.checked
+        use_downloads = self.toggle_downloads.switch.checked
+        use_documents = self.toggle_documents.switch.checked
+        
+        if not path and not any([use_desktop, use_downloads, use_documents]):
+            QMessageBox.warning(self, "خطأ المسار", "الرجاء إدخال مسار المجلد لتجميعه، أو تفعيل أحد المجلدات الافتراضية (سطح المكتب، التنزيلات، المستندات)!")
+            return
+            
+        if path and not os.path.exists(path):
+            QMessageBox.warning(self, "خطأ المسار", "المجلد المخصص لا يوجد في هذا المسار، يرجى التأكد!")
+            return
+            
+        target_paths = []
+        if path: target_paths.append(os.path.normpath(path))
+        if use_desktop: target_paths.append(os.path.normpath(os.path.expanduser("~/Desktop")))
+        if use_downloads: target_paths.append(os.path.normpath(os.path.expanduser("~/Downloads")))
+        if use_documents: target_paths.append(os.path.normpath(os.path.expanduser("~/Documents")))
+
         if self.on_navigate:
-            self.on_navigate("pr", start_processing=True, accuracy=accuracy_value)
+            self.on_navigate("pr", start_processing=True, target_paths=target_paths)

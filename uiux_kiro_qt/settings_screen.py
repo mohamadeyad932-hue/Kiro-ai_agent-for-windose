@@ -8,15 +8,10 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont, QPainter, QBrush, QColor
 from translations import lang_manager, t
 
-# ── لوحة الألوان الموحدة ──────────────────────────────────────────
-BG_DEEP     = "#020650"
-BG_MID      = "#050F26"
-CYAN        = "#00D2FF"
-BLUE        = "#1A73E8"
-EMERALD     = "#10B981"
-TEXT_MAIN   = "#FFFFFF"
-TEXT_SUB    = "#80A0C0"
-BORDER_CYAN = "rgba(0, 210, 255, 0.15)"
+from theme import (
+    BG_DEEP, BG_MID, CYAN, BLUE, EMERALD,
+    TEXT_MAIN, TEXT_SUB, BORDER_CYAN
+)
 
 
 class ToggleSwitchSettings(QWidget):
@@ -54,16 +49,8 @@ class SettingsScreen(QWidget):
         lang_manager.language_changed.connect(self._on_lang_changed)
 
     def paintEvent(self, event):
-        from PyQt6.QtGui import QRadialGradient, QLinearGradient
-        p = QPainter(self); p.setRenderHint(QPainter.RenderHint.Antialiasing)
-        W, H = self.width(), self.height()
-        bg = QLinearGradient(0, 0, 0, H)
-        bg.setColorAt(0.0, QColor(BG_DEEP)); bg.setColorAt(0.5, QColor(BG_MID)); bg.setColorAt(1.0, QColor(BG_DEEP))
-        p.fillRect(self.rect(), QBrush(bg))
-        cg = QRadialGradient(W/2, H*0.4, W*0.5)
-        cg.setColorAt(0.0, QColor(0, 210, 255, 30)); cg.setColorAt(1.0, QColor(0, 210, 255, 0))
-        p.fillRect(self.rect(), QBrush(cg))
-        p.end()
+        from theme import paint_bg
+        paint_bg(self)
 
     def _build(self):
         scroll_area = QScrollArea()
@@ -100,11 +87,7 @@ class SettingsScreen(QWidget):
         ])
         layout.addSpacing(15)
 
-        # ─── مجموعة 2 ───
-        self._build_group(layout, "settings_group2", [
-            ("settings_learning", "settings_learning_sub", "toggle", True),
-            ("settings_threads", "settings_threads_sub", "badge_cyan", "settings_thread_count"),
-        ])
+
 
         layout.addStretch()
 
@@ -118,15 +101,16 @@ class SettingsScreen(QWidget):
         group.setStyleSheet(f"QFrame#settingsGroup {{ background: rgba(255, 255, 255, 0.04); border-radius: 18px; border: 1px solid {BORDER_CYAN}; }}")
         g_layout = QVBoxLayout(group); g_layout.setContentsMargins(0, 0, 0, 0); g_layout.setSpacing(0)
 
-        head = QWidget(); head.setFixedHeight(44); head.setStyleSheet(f"background: rgba(0, 210, 255, 0.08); border-top-left-radius: 18px; border-top-right-radius: 18px;")
+        head = QWidget(); head.setFixedHeight(44); head.setStyleSheet(f"background: rgba(76, 194, 255, 0.08); border-top-left-radius: 18px; border-top-right-radius: 18px;")
         h_layout = QHBoxLayout(head); h_layout.setContentsMargins(20, 0, 20, 0)
 
         h_label = QLabel(t(title_key).upper())
         h_label.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold)); h_label.setStyleSheet(f"color: {CYAN}; background: transparent; letter-spacing: 1px;")
         self._labels[title_key] = h_label
 
-        h_layout.addStretch()
+        # Qt's layoutDirection handles mirroring automatically
         h_layout.addWidget(h_label)
+        h_layout.addStretch()
         g_layout.addWidget(head)
 
         for i, item in enumerate(items):
@@ -137,40 +121,53 @@ class SettingsScreen(QWidget):
             r_layout = QHBoxLayout(row)
             r_layout.setContentsMargins(20, 12, 20, 12)
 
-            # التحكم
-            if ctrl_type == "toggle":
-                ctrl = ToggleSwitchSettings(ctrl_val)
-                r_layout.addWidget(ctrl)
-            elif ctrl_type == "badge":
-                badge = QLabel(t(ctrl_val))
-                badge.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold)); badge.setFixedSize(84, 26); badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                badge.setStyleSheet(f"background: rgba(16, 185, 129, 0.15); color: {EMERALD}; border-radius: 13px;")
-                r_layout.addWidget(badge)
-                self._labels[f"badge_{name_key}"] = badge
-            elif ctrl_type == "badge_cyan":
-                badge = QLabel(t(ctrl_val))
-                badge.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold)); badge.setFixedSize(110, 26); badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                badge.setStyleSheet(f"background: rgba(0, 210, 255, 0.15); color: {CYAN}; border-radius: 13px;")
-                r_layout.addWidget(badge)
-                self._labels[f"badge_{name_key}"] = badge
-
-            r_layout.addStretch()
-
+            # ── عمود النص ──
             text_widget = QWidget()
             text_widget.setStyleSheet("background: transparent;")
             t_layout = QVBoxLayout(text_widget)
             t_layout.setContentsMargins(0, 0, 0, 0)
             t_layout.setSpacing(2)
 
-            n_lbl = QLabel(t(name_key)); n_lbl.setFont(QFont("Segoe UI", 12, QFont.Weight.Bold)); n_lbl.setStyleSheet(f"color: {TEXT_MAIN};")
+            n_lbl = QLabel(t(name_key))
+            n_lbl.setFont(QFont("Segoe UI", 12, QFont.Weight.Bold))
+            n_lbl.setStyleSheet(f"color: {TEXT_MAIN};")
             n_lbl.setAlignment(lang_manager.align)
 
-            d_lbl = QLabel(t(desc_key)); d_lbl.setFont(QFont("Segoe UI", 10)); d_lbl.setStyleSheet(f"color: {TEXT_SUB};")
-            d_lbl.setAlignment(lang_manager.align); d_lbl.setWordWrap(True)
+            d_lbl = QLabel(t(desc_key))
+            d_lbl.setFont(QFont("Segoe UI", 10))
+            d_lbl.setStyleSheet(f"color: {TEXT_SUB};")
+            d_lbl.setAlignment(lang_manager.align)
+            d_lbl.setWordWrap(True)
 
             t_layout.addWidget(n_lbl)
             t_layout.addWidget(d_lbl)
+
+            # ── عنصر التحكم ──
+            ctrl_widget = None
+            if ctrl_type == "toggle":
+                ctrl_widget = ToggleSwitchSettings(ctrl_val)
+            elif ctrl_type == "badge":
+                badge = QLabel(t(ctrl_val))
+                badge.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))
+                badge.setFixedSize(84, 26)
+                badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                badge.setStyleSheet(f"background: rgba(16, 185, 129, 0.15); color: {EMERALD}; border-radius: 13px;")
+                ctrl_widget = badge
+                self._labels[f"badge_{name_key}"] = badge
+            elif ctrl_type == "badge_cyan":
+                badge = QLabel(t(ctrl_val))
+                badge.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))
+                badge.setFixedSize(110, 26)
+                badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                badge.setStyleSheet(f"background: rgba(76, 194, 255, 0.15); color: {CYAN}; border-radius: 13px;")
+                ctrl_widget = badge
+                self._labels[f"badge_{name_key}"] = badge
+
+            # Qt's layoutDirection handles mirroring automatically
             r_layout.addWidget(text_widget)
+            r_layout.addStretch()
+            if ctrl_widget:
+                r_layout.addWidget(ctrl_widget)
 
             self._labels[name_key] = n_lbl
             self._labels[desc_key] = d_lbl
@@ -178,7 +175,8 @@ class SettingsScreen(QWidget):
             g_layout.addWidget(row)
 
             if i < len(items) - 1:
-                sep = QFrame(); sep.setFixedHeight(1)
+                sep = QFrame()
+                sep.setFixedHeight(1)
                 sep.setStyleSheet(f"background-color: rgba(255,255,255,0.05); margin-left: 20px; margin-right: 20px;")
                 g_layout.addWidget(sep)
 
@@ -191,12 +189,10 @@ class SettingsScreen(QWidget):
         self._labels["sub"].setAlignment(lang_manager.align)
 
         keys_to_update = [
-            "settings_group1", "settings_group2",
+            "settings_group1",
             "settings_nlp", "settings_nlp_sub",
             "settings_cv", "settings_cv_sub",
             "settings_gpu", "settings_gpu_sub",
-            "settings_learning", "settings_learning_sub",
-            "settings_threads", "settings_threads_sub",
         ]
         for key in keys_to_update:
             if key in self._labels:

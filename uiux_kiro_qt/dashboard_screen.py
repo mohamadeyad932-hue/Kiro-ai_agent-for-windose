@@ -9,18 +9,10 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont, QColor
 from translations import lang_manager, t
 
-# ── لوحة الألوان الموحدة ──────────────────────────────────────────
-BG_DEEP     = "#020650"
-BG_MID      = "#050F26"
-CYAN        = "#00D2FF"
-BLUE        = "#1A73E8"
-VIOLET      = "#BD00FF"
-EMERALD     = "#10B981"
-AMBER       = "#F59E0B"
-TEXT_MAIN   = "#FFFFFF"
-TEXT_SUB    = "#80A0C0"
-GLASS       = "rgba(255, 255, 255, 0.05)"
-BORDER_CYAN = "rgba(0, 210, 255, 0.15)"
+from theme import (
+    BG_DEEP, BG_MID, CYAN, BLUE, VIOLET, EMERALD, AMBER,
+    TEXT_MAIN, TEXT_SUB, GLASS, BORDER_CYAN
+)
 
 
 class DashboardScreen(QWidget):
@@ -35,16 +27,8 @@ class DashboardScreen(QWidget):
         lang_manager.language_changed.connect(self._on_lang_changed)
 
     def paintEvent(self, event):
-        from PyQt6.QtGui import QRadialGradient, QLinearGradient, QPainter, QBrush
-        p = QPainter(self); p.setRenderHint(QPainter.RenderHint.Antialiasing)
-        W, H = self.width(), self.height()
-        bg = QLinearGradient(0, 0, 0, H)
-        bg.setColorAt(0.0, QColor(BG_DEEP)); bg.setColorAt(0.5, QColor(BG_MID)); bg.setColorAt(1.0, QColor(BG_DEEP))
-        p.fillRect(self.rect(), QBrush(bg))
-        cg = QRadialGradient(W/2, H*0.4, W*0.5)
-        cg.setColorAt(0.0, QColor(0, 210, 255, 30)); cg.setColorAt(1.0, QColor(0, 210, 255, 0))
-        p.fillRect(self.rect(), QBrush(cg))
-        p.end()
+        from theme import paint_bg
+        paint_bg(self)
 
     def _build(self):
         scroll_area = QScrollArea()
@@ -61,13 +45,13 @@ class DashboardScreen(QWidget):
 
         # ─── بطاقة النجاح (Hero) ───
         hero = QFrame(); hero.setObjectName("hero")
-        hero.setStyleSheet(f"QFrame#hero {{ background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 rgba(0, 210, 255, 0.1), stop:1 rgba(0, 210, 255, 0.05)); border-radius: 20px; border: 1px solid {BORDER_CYAN}; }}")
+        hero.setStyleSheet(f"QFrame#hero {{ background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 rgba(0, 120, 215, 0.08), stop:1 rgba(0, 120, 215, 0.04)); border-radius: 20px; border: 1.5px solid {BORDER_CYAN}; }}")
         hero_layout = QHBoxLayout(hero); hero_layout.setContentsMargins(20, 20, 20, 20); hero_layout.setSpacing(15)
 
         icon_frame = QLabel("✓")
         icon_frame.setFixedSize(60, 60); icon_frame.setAlignment(Qt.AlignmentFlag.AlignCenter)
         icon_frame.setFont(QFont("Segoe UI", 22, QFont.Weight.Bold))
-        icon_frame.setStyleSheet(f"background: rgba(0, 210, 255, 0.15); color: {CYAN}; border: 1.5px solid {CYAN}; border-radius: 30px;")
+        icon_frame.setStyleSheet(f"background: rgba(76, 194, 255, 0.15); color: {CYAN}; border: 1.5px solid {CYAN}; border-radius: 30px;")
 
         msg_widget = QWidget(); msg_widget.setStyleSheet("background: transparent;")
         msg_layout = QVBoxLayout(msg_widget); msg_layout.setContentsMargins(0, 0, 0, 0); msg_layout.setSpacing(4)
@@ -78,12 +62,21 @@ class DashboardScreen(QWidget):
         self._labels["hero_title"].setAlignment(lang_manager.align)
 
         self._labels["hero_desc"] = QLabel(t("dash_hero_desc"))
-        self._labels["hero_desc"].setFont(QFont("Segoe UI", 11)); self._labels["hero_desc"].setStyleSheet(f"color: {TEXT_SUB};"); self._labels["hero_desc"].setAlignment(lang_manager.align); self._labels["hero_desc"].setWordWrap(True)
+        self._labels["hero_desc"].setFont(QFont("Segoe UI", 11))
+        self._labels["hero_desc"].setStyleSheet(f"color: {TEXT_SUB};")
+        self._labels["hero_desc"].setAlignment(lang_manager.align)
+        self._labels["hero_desc"].setWordWrap(True)
 
-        msg_layout.addWidget(self._labels["hero_title"]); msg_layout.addWidget(self._labels["hero_desc"])
-        hero_layout.addStretch(); hero_layout.addWidget(msg_widget, stretch=1); hero_layout.addSpacing(10); hero_layout.addWidget(icon_frame)
-        layout.addWidget(hero); layout.addSpacing(25)
-        layout.addSpacing(20)
+        msg_layout.addWidget(self._labels["hero_title"])
+        msg_layout.addWidget(self._labels["hero_desc"])
+        
+        # Qt's layoutDirection handles mirroring automatically
+        hero_layout.addWidget(msg_widget, stretch=1)
+        hero_layout.addSpacing(10)
+        hero_layout.addWidget(icon_frame)
+        
+        layout.addWidget(hero)
+        layout.addSpacing(25)
 
         # ─── الإحصائيات ───
         stats_widget = QWidget()
@@ -101,7 +94,7 @@ class DashboardScreen(QWidget):
         self._stat_widgets = []
         for i, (lbl_key, val_key, color, sub_key) in enumerate(stat_keys):
             card = QFrame(); card.setObjectName(f"stat{i}")
-            card.setStyleSheet(f"QFrame#stat{i} {{ background: rgba(255, 255, 255, 0.04); border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.08); }}")
+            card.setStyleSheet(f"QFrame#stat{i} {{ background: rgba(0, 0, 0, 0.04); border-radius: 16px; border: 1px solid rgba(0, 0, 0, 0.1); }}")
             c_layout = QVBoxLayout(card); c_layout.setContentsMargins(16, 16, 16, 16); c_layout.setSpacing(2)
 
             l_lbl = QLabel(t(lbl_key)); l_lbl.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold)); l_lbl.setStyleSheet(f"color: {TEXT_SUB};")
@@ -117,7 +110,8 @@ class DashboardScreen(QWidget):
             c_layout.addWidget(v_lbl)
             c_layout.addWidget(s_lbl)
 
-            stats_grid.addWidget(card, 0, 3 - i)
+            # Qt handles grid mirroring via layoutDirection
+            stats_grid.addWidget(card, 0, i)
             self._stat_widgets.append((lbl_key, l_lbl, val_key, v_lbl, sub_key, s_lbl))
 
         layout.addWidget(stats_widget)
@@ -125,10 +119,10 @@ class DashboardScreen(QWidget):
 
         # ─── قائمة المجلدات الذكية ───
         folder_card = QFrame(); folder_card.setObjectName("folders")
-        folder_card.setStyleSheet(f"QFrame#folders {{ background: rgba(255, 255, 255, 0.04); border-radius: 18px; border: 1px solid {BORDER_CYAN}; }}")
+        folder_card.setStyleSheet(f"QFrame#folders {{ background: rgba(0, 0, 0, 0.03); border-radius: 18px; border: 1.5px solid {BORDER_CYAN}; }}")
         self.fc_layout = QVBoxLayout(folder_card); self.fc_layout.setContentsMargins(0, 0, 0, 0); self.fc_layout.setSpacing(0)
 
-        head = QWidget(); head.setFixedHeight(48); head.setStyleSheet(f"background: rgba(0, 210, 255, 0.08); border-top-left-radius: 18px; border-top-right-radius: 18px;")
+        head = QWidget(); head.setFixedHeight(48); head.setStyleSheet(f"background: rgba(0, 120, 215, 0.07); border-top-left-radius: 18px; border-top-right-radius: 18px; border-bottom: 1px solid {BORDER_CYAN};")
         h_layout = QHBoxLayout(head); h_layout.setContentsMargins(20, 0, 20, 0)
 
         self._labels["f_badge"] = QLabel(t("dash_folders_count"))
@@ -137,19 +131,20 @@ class DashboardScreen(QWidget):
         self._labels["f_title"] = QLabel(t("dash_folders_title"))
         self._labels["f_title"].setFont(QFont("Segoe UI", 12, QFont.Weight.Bold)); self._labels["f_title"].setStyleSheet(f"color: {TEXT_MAIN}; background: transparent;")
 
-        h_layout.addWidget(self._labels["f_badge"])
-        h_layout.addStretch()
+        # Qt's layoutDirection handles mirroring automatically
         h_layout.addWidget(self._labels["f_title"])
+        h_layout.addStretch()
+        h_layout.addWidget(self._labels["f_badge"])
         self.fc_layout.addWidget(head)
 
         self._folder_keys = [
-            ("📋", "dash_folder1", 55, VIOLET, "dash_folder1_count"),
-            ("💼", "dash_folder2", 42, EMERALD, "dash_folder2_count"),
-            ("📸", "dash_folder3", 78, AMBER, "dash_folder3_count"),
+            ("dash_folder1", 55, VIOLET, "dash_folder1_count"),
+            ("dash_folder2", 42, EMERALD, "dash_folder2_count"),
+            ("dash_folder3", 78, AMBER, "dash_folder3_count"),
         ]
         self._folder_labels = []
-        for icon, name_key, pct, color, count_key in self._folder_keys:
-            name_lbl, count_lbl = self._folder_row(self.fc_layout, icon, name_key, pct, color, count_key)
+        for name_key, pct, color, count_key in self._folder_keys:
+            name_lbl, count_lbl = self._folder_row(self.fc_layout, name_key, pct, color, count_key)
             self._folder_labels.append((name_key, name_lbl, count_key, count_lbl))
 
         layout.addWidget(folder_card)
@@ -170,9 +165,9 @@ class DashboardScreen(QWidget):
         outer.setContentsMargins(0, 0, 0, 0)
         outer.addWidget(scroll_area)
 
-    def _folder_row(self, parent_layout, icon, name_key, pct, color, count_key):
+    def _folder_row(self, parent_layout, name_key, pct, color, count_key):
         sep = QFrame(); sep.setFixedHeight(1)
-        sep.setStyleSheet(f"background-color: rgba(255,255,255,0.05); border: none;")
+        sep.setStyleSheet(f"background-color: rgba(0, 0, 0, 0.06); border: none;")
         parent_layout.addWidget(sep)
 
         row = QWidget()
@@ -180,20 +175,24 @@ class DashboardScreen(QWidget):
         r_layout = QHBoxLayout(row)
         r_layout.setContentsMargins(20, 12, 20, 12)
 
-        count_badge = QLabel(t(count_key)); count_badge.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold)); count_badge.setFixedSize(74, 28); count_badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        count_badge = QLabel(t(count_key))
+        count_badge.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
+        count_badge.setFixedSize(74, 28)
+        count_badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
         count_badge.setStyleSheet(f"background: rgba(16, 185, 129, 0.15); color: {EMERALD}; border-radius: 14px;")
 
-        icon_frame = QLabel(icon); icon_frame.setFixedSize(48, 48); icon_frame.setAlignment(Qt.AlignmentFlag.AlignCenter); icon_frame.setFont(QFont("Segoe UI Emoji", 18))
-        icon_frame.setStyleSheet(f"background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px;")
+
 
         info_widget = QWidget()
         info_widget.setStyleSheet("background: transparent;")
         info_layout = QVBoxLayout(info_widget)
-        info_layout.setContentsMargins(0, 0, 10, 0)
+        info_layout.setContentsMargins(5, 0, 5, 0)
         info_layout.setSpacing(4)
 
-        name_lbl = QLabel(t(name_key)); name_lbl.setFont(QFont("Segoe UI", 12, QFont.Weight.Bold)); name_lbl.setStyleSheet(f"color: {TEXT_MAIN}; background:transparent;")
-        name_lbl.setAlignment(lang_manager.align)
+        name_lbl = QLabel(t(name_key))
+        name_lbl.setFont(QFont("Segoe UI", 12, QFont.Weight.Bold))
+        name_lbl.setStyleSheet(f"color: {TEXT_MAIN}; background:transparent;")
+        name_lbl.setAlignment(lang_manager.align | Qt.AlignmentFlag.AlignVCenter)
 
         prog_widget = QWidget()
         prog_widget.setStyleSheet("background: transparent;")
@@ -201,24 +200,30 @@ class DashboardScreen(QWidget):
         prog_layout.setContentsMargins(0, 0, 0, 0)
         prog_layout.setSpacing(6)
 
-        pct_lbl = QLabel(f"{pct}%"); pct_lbl.setFont(QFont("Consolas", 9, QFont.Weight.Bold)); pct_lbl.setStyleSheet(f"color: {TEXT_SUB};")
+        pct_lbl = QLabel(f"{pct}%")
+        pct_lbl.setFont(QFont("Consolas", 9, QFont.Weight.Bold))
+        pct_lbl.setStyleSheet(f"color: {TEXT_SUB};")
 
-        prog_bar = QProgressBar(); prog_bar.setFixedSize(120, 6); prog_bar.setRange(0, 100); prog_bar.setValue(pct); prog_bar.setTextVisible(False)
-        prog_bar.setStyleSheet(f"QProgressBar {{ background: rgba(255,255,255,0.08); border-radius: 3px; border: none; }} QProgressBar::chunk {{ background: {color}; border-radius: 3px; }}")
+        prog_bar = QProgressBar()
+        prog_bar.setFixedSize(120, 6)
+        prog_bar.setRange(0, 100)
+        prog_bar.setValue(pct)
+        prog_bar.setTextVisible(False)
+        prog_bar.setStyleSheet(f"QProgressBar {{ background: rgba(0, 0, 0, 0.08); border-radius: 3px; border: none; }} QProgressBar::chunk {{ background: {color}; border-radius: 3px; }}")
 
-        prog_layout.addStretch()
-        prog_layout.addWidget(prog_bar)
         prog_layout.addWidget(pct_lbl)
+        prog_layout.addWidget(prog_bar)
+        prog_layout.addStretch()
 
         info_layout.addWidget(name_lbl)
         info_layout.addWidget(prog_widget)
 
-        r_layout.addWidget(count_badge)
-        r_layout.addStretch()
+        # Qt's layoutDirection handles mirroring automatically
         r_layout.addWidget(info_widget, stretch=1)
-        r_layout.addWidget(icon_frame)
-        parent_layout.addWidget(row)
+        r_layout.addStretch()
+        r_layout.addWidget(count_badge)
 
+        parent_layout.addWidget(row)
         return name_lbl, count_badge
 
     def _on_lang_changed(self, lang):

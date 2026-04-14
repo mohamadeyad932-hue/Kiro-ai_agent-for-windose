@@ -213,6 +213,12 @@ if __name__ == "__main__":
             
             try:
                 text = READERS[ext](full_path)
+            except PermissionError:
+                print(f"  ⚠ الملف قيد الاستخدام (مقفول)، تم تخطيه تلقائياً: {file_name}{ext}")
+                continue
+            except FileNotFoundError:
+                print(f"  ⚠ اختفى الملف فجأة (ربما قمت بنقله أو حذفه للتو): {file_name}{ext}")
+                continue
             except Exception as e:
                 print(f"  ⚠ خطأ في القراءة: {file_name}{ext} → {e}")
                 continue

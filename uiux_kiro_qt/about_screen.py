@@ -8,14 +8,10 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont
 from translations import lang_manager, t
 
-# ── لوحة الألوان الموحدة ──────────────────────────────────────────
-BG_DEEP     = "#020650"
-BG_MID      = "#050F26"
-CYAN        = "#00D2FF"
-BLUE        = "#1A73E8"
-TEXT_MAIN   = "#FFFFFF"
-TEXT_SUB    = "#80A0C0"
-BORDER_CYAN = "rgba(0, 210, 255, 0.15)"
+from theme import (
+    BG_DEEP, BG_MID, CYAN, BLUE,
+    TEXT_MAIN, TEXT_SUB, BORDER_CYAN
+)
 
 
 class AboutScreen(QWidget):
@@ -30,16 +26,8 @@ class AboutScreen(QWidget):
         lang_manager.language_changed.connect(self._on_lang_changed)
 
     def paintEvent(self, event):
-        from PyQt6.QtGui import QRadialGradient, QLinearGradient, QPainter, QBrush, QColor
-        p = QPainter(self); p.setRenderHint(QPainter.RenderHint.Antialiasing)
-        W, H = self.width(), self.height()
-        bg = QLinearGradient(0, 0, 0, H)
-        bg.setColorAt(0.0, QColor(BG_DEEP)); bg.setColorAt(0.5, QColor(BG_MID)); bg.setColorAt(1.0, QColor(BG_DEEP))
-        p.fillRect(self.rect(), QBrush(bg))
-        cg = QRadialGradient(W/2, H*0.4, W*0.5)
-        cg.setColorAt(0.0, QColor(0, 210, 255, 30)); cg.setColorAt(1.0, QColor(0, 210, 255, 0))
-        p.fillRect(self.rect(), QBrush(cg))
-        p.end()
+        from theme import paint_bg
+        paint_bg(self)
 
     def _build(self):
         scroll_area = QScrollArea()
@@ -92,19 +80,24 @@ class AboutScreen(QWidget):
         g_layout.setContentsMargins(0, 0, 0, 0)
         g_layout.setSpacing(0)
 
-        head = QWidget(); head.setFixedHeight(44); head.setStyleSheet(f"background: rgba(0, 210, 255, 0.08); border-top-left-radius: 18px; border-top-right-radius: 18px;")
+        head = QWidget(); head.setFixedHeight(44); head.setStyleSheet(f"background: rgba(76, 194, 255, 0.08); border-top-left-radius: 18px; border-top-right-radius: 18px;")
         h_layout = QHBoxLayout(head); h_layout.setContentsMargins(20, 0, 20, 0)
 
         h_label = QLabel(t(title_key).upper())
         h_label.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold)); h_label.setStyleSheet(f"color: {CYAN}; background: transparent; letter-spacing: 1px;")
         self._labels[title_key] = h_label
 
-        h_layout.addStretch()
+        # Qt's layoutDirection handles mirroring automatically
         h_layout.addWidget(h_label)
+        h_layout.addStretch()
         g_layout.addWidget(head)
 
-        body_lbl = QLabel(t(body_key)); body_lbl.setFont(QFont("Segoe UI", 11)); body_lbl.setStyleSheet(f"color: {TEXT_SUB}; background: transparent;")
-        body_lbl.setAlignment(lang_manager.align); body_lbl.setWordWrap(True); body_lbl.setContentsMargins(20, 16, 20, 20)
+        body_lbl = QLabel(t(body_key))
+        body_lbl.setFont(QFont("Segoe UI", 11))
+        body_lbl.setStyleSheet(f"color: {TEXT_SUB}; background: transparent;")
+        body_lbl.setAlignment(lang_manager.align)
+        body_lbl.setWordWrap(True)
+        body_lbl.setContentsMargins(20, 16, 20, 20)
         self._labels[body_key] = body_lbl
         g_layout.addWidget(body_lbl)
 

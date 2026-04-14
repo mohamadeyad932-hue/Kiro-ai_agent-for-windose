@@ -27,8 +27,11 @@ class LanguageManager(QObject):
 
     @property
     def align(self):
-        """محاذاة النص حسب اللغة"""
-        return Qt.AlignmentFlag.AlignRight if self.is_rtl else Qt.AlignmentFlag.AlignLeft
+        """محاذاة النص حسب اللغة.
+        مع setLayoutDirection(RTL)، Qt يعكس AlignLeft تلقائياً
+        إلى الجهة اليمنى فيزيائياً. لذلك نستخدم AlignLeft دائماً.
+        """
+        return Qt.AlignmentFlag.AlignLeft
 
     def set_language(self, lang: str):
         if lang != self._lang:
@@ -161,17 +164,7 @@ STRINGS = {
     "config_start_btn": {"ar": "  ▶  تشغيل وحدة المعالجة", "en": "▶  Start Processing Unit"},
 
     # ─── شاشة المعالجة ───
-    "proc_reset": {"ar": "↺ إعادة تعيين المعالجة", "en": "↺ Reset Processing"},
-    "proc_title_init": {"ar": "جاري حقن خوارزمية الفحص...", "en": "Injecting scan algorithm..."},
-    "proc_sub_init": {"ar": "يتم مسح قطاعات التخزين المحددة", "en": "Scanning designated storage sectors"},
-    "proc_ready": {"ar": "جاهز لبدء الفحص...", "en": "Ready to start scan..."},
-    "proc_waiting": {"ar": "بانتظار أمر التشغيل", "en": "Waiting for start command"},
-    "proc_step1": {"ar": "مسح القطاعات", "en": "Scan Sectors"},
-    "proc_step2": {"ar": "تحليل عصبوني", "en": "Neural Analysis"},
-    "proc_step3": {"ar": "إعادة الهيكلة", "en": "Restructuring"},
-    "proc_step4": {"ar": "اكتمال العملية", "en": "Complete"},
-    "proc_standby": {"ar": "Standby...", "en": "Standby..."},
-
+ 
     # رسائل المراحل
     "phase1_title": {"ar": "Kiro يمسح القطاعات التخزينية...", "en": "Kiro scanning storage sectors..."},
     "phase1_sub": {"ar": "يبحث عن البيانات غير المهيكلة في المسارات المحددة", "en": "Looking for unstructured data in specified paths"},
