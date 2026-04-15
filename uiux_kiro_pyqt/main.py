@@ -9,7 +9,7 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                               QHBoxLayout, QPushButton, QLabel, QStackedWidget,
                               QFrame, QGraphicsDropShadowEffect, QGraphicsOpacityEffect)
 from PyQt6.QtCore import Qt, QSize, QPropertyAnimation, QEasingCurve
-from PyQt6.QtGui import QFont, QColor
+from PyQt6.QtGui import QFont, QColor, QIcon
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -45,12 +45,21 @@ NAV_KEYS = {
 
 class SidebarButton(QPushButton):
     """زر تنقل في الشريط الجانبي"""
-    def __init__(self, icon_text, nav_key, page_id, on_click, parent=None):
+    def __init__(self, icon_data, nav_key, page_id, on_click, parent=None):
         super().__init__(parent)
         self.page_id = page_id
-        self.icon_text = icon_text
+        self.icon_data = icon_data
         self.nav_key = nav_key
         self._is_active = False
+        
+        # التأكد مما إذا كان المعطى مسار لملف أيقونة
+        self.is_image_icon = False
+        valid_extensions = ('.ico', '.png', '.jpg', '.jpeg', '.svg')
+        if isinstance(icon_data, str) and (icon_data.lower().endswith(valid_extensions) or os.path.isfile(icon_data)):
+            self.setIcon(QIcon(icon_data))
+            self.setIconSize(QSize(22, 22))
+            self.is_image_icon = True
+            
         self._update_text()
         self.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
         self.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -61,8 +70,12 @@ class SidebarButton(QPushButton):
 
     def _update_text(self):
         text = t(self.nav_key)
-        # وضع الأيقونة دائماً قبل النص (في بداية السطر حسب اتجاه اللغة)
-        self.setText(f"{self.icon_text}   {text}")
+        if self.is_image_icon:
+            # إذا كانت أيقونة صورة، نضع النص فقط (الأيقونة تظهر بجانبه تلقائياً)
+            self.setText(f"   {text}")
+        else:
+            # إذا كانت إيموجي، نضعه قبل النص
+            self.setText(f"{self.icon_data}   {text}")
 
     def set_active(self):
         self._is_active = True
@@ -375,10 +388,19 @@ class KiroApp(QMainWindow):
         layout.addWidget(self._labels["cat1"])
         layout.addSpacing(8)
 
-        self._add_nav_btn("🏠", "nav_sp", "sp", layout)
-        self._add_nav_btn("✏️", "nav_cf", "cf", layout)
-        self._add_nav_btn("⏱️", "nav_pr", "pr", layout)
-        self._add_nav_btn("📊", "nav_db", "db", layout)
+        ICONS_DIR = os.path.join(os.path.dirname(__file__), "icons")
+
+        ico_path = os.path.join(ICONS_DIR, "homeregular_106344.ico")
+        self._add_nav_btn(ico_path if os.path.exists(ico_path) else "🏠", "nav_sp", "sp", layout)
+        
+        cfg_path = os.path.join(ICONS_DIR, "config.svg")
+        self._add_nav_btn(cfg_path if os.path.exists(cfg_path) else "✏️", "nav_cf", "cf", layout)
+        
+        clk_path = os.path.join(ICONS_DIR, "clock.svg")
+        self._add_nav_btn(clk_path if os.path.exists(clk_path) else "⏱️", "nav_pr", "pr", layout)
+        
+        ana_path = os.path.join(ICONS_DIR, "analsyes.svg")
+        self._add_nav_btn(ana_path if os.path.exists(ana_path) else "📊", "nav_db", "db", layout)
 
         layout.addSpacing(16)
 
@@ -389,8 +411,11 @@ class KiroApp(QMainWindow):
         layout.addWidget(self._labels["cat2"])
         layout.addSpacing(8)
 
-        self._add_nav_btn("⚙️", "nav_st", "st", layout)
-        self._add_nav_btn("ℹ️", "nav_ab", "ab", layout)
+        set_path = os.path.join(ICONS_DIR, "setting.svg")
+        self._add_nav_btn(set_path if os.path.exists(set_path) else "⚙️", "nav_st", "st", layout)
+        
+        abt_path = os.path.join(ICONS_DIR, "abaut.svg")
+        self._add_nav_btn(abt_path if os.path.exists(abt_path) else "ℹ️", "nav_ab", "ab", layout)
 
         layout.addStretch()
 

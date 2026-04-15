@@ -239,4 +239,14 @@ STRINGS = {
         "ar": "الخصوصية هي جوهر Kiro AI. تم بناء النماذج العصبونية لتعمل بشكل محلي (Local Processing) تماماً على عتاد جهازك، مما يعني أن ملفاتك الشخصية، تقاريرك، وصورك لا تُرفع أبداً إلى أي سحابة خارجية أو خوادم طرف ثالث. كل المعالجة تتم داخل جهازك.",
         "en": "Privacy is at the core of Kiro AI. Neural models are built to run entirely locally on your hardware, meaning your personal files, reports, and photos are never uploaded to any external cloud or third-party servers. All processing happens on your device.",
     },
+    # ─── رسائل الخطأ ───
+    "err_path_title": {"ar": "خطأ في المسار", "en": "Path Error"},
+    "err_path_missing": {
+        "ar": "الرجاء إدخال مسار المجلد أو تفعيل أحد المجلدات الافتراضية (سطح المكتب، التنزيلات، المستندات)!",
+        "en": "Please enter a folder path or enable one of the default folders (Desktop, Downloads, Documents)!",
+    },
+    "err_path_invalid": {
+        "ar": "المجلد المحدد غير موجود، يرجى التأكد من المسار!",
+        "en": "The specified folder does not exist, please check the path!",
+    },
 }

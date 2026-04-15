@@ -14,26 +14,26 @@ except ImportError:
     sys.exit(1)
 
 # إضافة مسار مجلد text_file_prossing ليتمكن بايثون من استيراد القواميس منه
-PROCESSING_DIR = r"c:\Users\eyad\Desktop\Kiro-ai_agent-for-windose\text_file_prossing"
+PROCESSING_DIR = r"c:\Users\eyad\Desktop\Kiro-ai_agent-for-windose\Processing text files"
 if PROCESSING_DIR not in sys.path:
     sys.path.append(PROCESSING_DIR)
 
 # Import dictionaries and BERT vectors (768 dimensions)
 try:
-    from desktop_files import desktop_file
-    from desktop_vectors import desktop_vectors
+    from desktop_files import desktop_file # type: ignore
+    from desktop_vectors import desktop_vectors # type: ignore
 except ImportError:
     desktop_file = {}; desktop_vectors = {}
 
 try:
-    from documents_files import documents_file
-    from documents_vectors import documents_vectors
+    from documents_files import documents_file # type: ignore
+    from documents_vectors import documents_vectors # type: ignore
 except ImportError:
     documents_file = {}; documents_vectors = {}
 
 try:
-    from downloads_files import downloads_file
-    from downloads_vectors import downloads_vectors
+    from downloads_files import downloads_file # type: ignore
+    from downloads_vectors import downloads_vectors # type: ignore
 except ImportError:
     downloads_file = {}; downloads_vectors = {}
 

@@ -14,7 +14,7 @@ from translations import lang_manager, t
 
 from theme import (
     BG_DEEP, BG_MID, CYAN, BLUE, VIOLET,
-    TEXT_MAIN, TEXT_SUB, GLASS, BORDER_CYAN
+    TEXT_MAIN, TEXT_SUB, GLASS, BORDER_CYAN, ModernDialog
 )
 
 
@@ -312,11 +312,11 @@ class ConfigScreen(QWidget):
         use_documents = self.toggle_documents.switch.checked
         
         if not path and not any([use_desktop, use_downloads, use_documents]):
-            QMessageBox.warning(self, "خطأ المسار", "الرجاء إدخال مسار المجلد لتجميعه، أو تفعيل أحد المجلدات الافتراضية (سطح المكتب، التنزيلات، المستندات)!")
+            ModernDialog(t("err_path_title"), t("err_path_missing"), self).exec()
             return
             
         if path and not os.path.exists(path):
-            QMessageBox.warning(self, "خطأ المسار", "المجلد المخصص لا يوجد في هذا المسار، يرجى التأكد!")
+            ModernDialog(t("err_path_title"), t("err_path_invalid"), self).exec()
             return
             
         target_paths = []

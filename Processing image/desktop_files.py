@@ -3,8 +3,11 @@
 توليد تلقائي
 """
 
-# جميع الصور (12 صورة)
+# جميع الصور (15 صورة)
 desktop_image_file = {
+    "images": ".jfif",
+    "images (1)": ".jfif",
+    "images (2)": ".jfif",
     "tt": ".jpg",
     "unnamed": ".jpg",
     "تنزيل": ".jfif",

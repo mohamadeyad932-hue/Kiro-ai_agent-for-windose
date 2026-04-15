@@ -21,30 +21,30 @@ except ImportError:
     sys.exit(1)
 
 # إضافة مسار مجلد imag_plip_p ليتمكن بايثون من استيراد القواميس منه
-PROCESSING_DIR = r"c:\Users\eyad\Desktop\Kiro-ai_agent-for-windose\imag_plip_p"
+PROCESSING_DIR = r"c:\Users\eyad\Desktop\Kiro-ai_agent-for-windose\Processing image"
 if PROCESSING_DIR not in sys.path:
     sys.path.append(PROCESSING_DIR)
 
 # ─── استيراد قواميس الصور والبصمات ───
 
 try:
-    from desktop_files import desktop_image_file
-    from desktop_vectors import desktop_image_vectors
-    from desktop_image_to_text import desktop_image_captions
+    from desktop_files import desktop_image_file # type: ignore
+    from desktop_vectors import desktop_image_vectors # type: ignore
+    from desktop_image_to_text import desktop_image_captions # type: ignore
 except ImportError:
     desktop_image_file = {}; desktop_image_vectors = {}; desktop_image_captions = {}
 
 try:
-    from documents_files import documents_image_file
-    from documents_vectors import documents_image_vectors
-    from documents_image_to_text import documents_image_captions
+    from documents_files import documents_image_file # type: ignore
+    from documents_vectors import documents_image_vectors # type: ignore
+    from documents_image_to_text import documents_image_captions # type: ignore
 except ImportError:
     documents_image_file = {}; documents_image_vectors = {}; documents_image_captions = {}
 
 try:
-    from downloads_files import downloads_image_file
-    from downloads_vectors import downloads_image_vectors
-    from downloads_image_to_text import downloads_image_captions
+    from downloads_files import downloads_image_file # type: ignore
+    from downloads_vectors import downloads_image_vectors # type: ignore
+    from downloads_image_to_text import downloads_image_captions # type: ignore
 except ImportError:
     downloads_image_file = {}; downloads_image_vectors = {}; downloads_image_captions = {}
 

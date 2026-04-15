@@ -21,7 +21,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 # ─────────────── الإعدادات ───────────────
 
 IMAGE_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.bmp', '.gif', '.webp', '.tiff', '.tif', '.jfif'}
-BLIP_MODEL_PATH  = r"C:\Users\eyad\Desktop\Kiro-ai_agent-for-windose\models\model\blip-image-captioning-base"
+BLIP_MODEL_PATH  = r"C:\Users\eyad\Desktop\Kiro-ai_agent-for-windose\models\blip-image-captioning-base"
 SBERT_MODEL_PATH = r"C:\Users\eyad\Desktop\Kiro-ai_agent-for-windose\models\sbert_high_res"
 HOME             = os.path.expanduser('~')
 OUTPUT_DIR       = os.path.dirname(os.path.abspath(__file__))

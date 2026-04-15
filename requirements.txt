@@ -1,24 +1,21 @@
-# ─── النماذج والذكاء الاصطناعي ───
-torch
-transformers
-sentence-transformers
-safetensors
+# ─── النماذج والذكاء الاصطناعي (AI & Models) ───
+torch torchvision torchaudio  # لمعالجة النماذج العصبونية وتشغيل التنسورات
+transformers                  # لتشغيل نماذج SBERT و BLIP
+safetensors                   # لآلية تحميل أوزان النماذج السريعة والآمنة
 
-# ─── معالجة الملفات النصية ───
-PyMuPDF
-python-docx
+# ─── معالجة الملفات النصية (Text Processing) ───
+PyMuPDF                       # (fitz) لقراءة النصوص من ملفات PDF الممسوحة ضوئياً
+python-docx                   # لقراءة الملفات النصية بصيغة Word (.docx)
 
-# ─── معالجة الصور ───
-Pillow
-imagehash
+# ─── معالجة الصور (Image Processing) ───
+Pillow                        # (PIL) للتعامل الأساسي مع الصور وقراءتها لمعالجتها
+imagehash                     # لاستخراج البصمة الإدراكية (Perceptual Hashing) وكشف الصور المكررة
+PyWavelets                    # مطلوبة كاعتمادية لمكتبة imagehash
 
-# ─── التجميع والحساب ───
-scikit-learn
-numpy
-scipy
+# ─── التجميع والحساب (Clustering & Math) ───
+scikit-learn                  # لتجميع البيانات (Agglomerative Clustering) في الصور والنصوص
+numpy                         # لمعالجة المتجهات (Vectors) بكفاءة عالية
+scipy                         # مطلوب لعمليات الرياضيات المعقدة داخل التجميع
 
-# ─── واجهة المستخدم ───
-PySide6
-
-# ─── أدوات مساعدة ───
-watchdog
+# ─── واجهة المستخدم الرسومية (GUI) ───
+PyQt6                         # لبناء الواجهة الرسومية الحديثة للتطبيق (UI/UX)

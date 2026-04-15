@@ -1,6 +1,6 @@
-from PyQt6.QtWidgets import QWidget
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QPainter, QColor, QBrush, QLinearGradient, QRadialGradient
+from PyQt6.QtWidgets import QWidget, QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QFrame, QGraphicsDropShadowEffect
+from PyQt6.QtCore import Qt, QSize
+from PyQt6.QtGui import QPainter, QColor, QBrush, QLinearGradient, QRadialGradient, QFont
 # ─── لوحة الألوان الموحدة (Midnight Slate) ───
 # ─── لوحة الألوان الموحدة (Light Theme) ───
 BG_DEEP     = "#FFFFFF"  # خلفية بيضاء نقية
@@ -105,6 +105,24 @@ GLOBAL_STYLESHEET = f"""
         padding: 6px 10px;
         border-radius: 8px;
     }}
+    QMessageBox {{
+        background-color: white !important;
+    }}
+    QMessageBox QLabel {{
+        color: black !important;
+        background-color: transparent !important;
+    }}
+    QMessageBox QPushButton {{
+        background-color: #e1e1e1 !important;
+        color: black !important;
+        border: 1px solid #adadad !important;
+        border-radius: 4px;
+        padding: 5px 15px;
+        min-width: 80px;
+    }}
+    QMessageBox QPushButton:hover {{
+        background-color: #d1d1d1 !important;
+    }}
 """
 
 
@@ -136,5 +154,84 @@ class GradientBase(QWidget):
     """
     def paintEvent(self, event):
         paint_bg(self)
+
+
+class ModernDialog(QDialog):
+    """نافذة حوار مخصصة عصرية تتناسب مع ثيم التطبيق"""
+    def __init__(self, title, message, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle(title)
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.setFixedSize(400, 220)
+        
+        # حاوية رئيسية بخلفية بيضاء نقية وحدود ناعمة
+        self.main_frame = QFrame(self)
+        self.main_frame.setFixedSize(400, 220)
+        self.main_frame.setStyleSheet(f"""
+            QFrame {{
+                background-color: white;
+                border: 2px solid {CYAN};
+                border-radius: 20px;
+            }}
+        """)
+        
+        # إضافة ظل
+        shadow = QGraphicsDropShadowEffect()
+        shadow.setBlurRadius(25)
+        shadow.setColor(QColor(0, 0, 0, 50))
+        shadow.setOffset(0, 5)
+        self.main_frame.setGraphicsEffect(shadow)
+        
+        layout = QVBoxLayout(self.main_frame)
+        layout.setContentsMargins(25, 25, 25, 25)
+        layout.setSpacing(15)
+        
+        # العنوان
+        title_lbl = QLabel(title)
+        title_lbl.setFont(QFont("Segoe UI", 13, QFont.Weight.Bold))
+        title_lbl.setStyleSheet(f"color: {BLUE}; border: none; background: transparent;")
+        title_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        # الرسالة
+        msg_lbl = QLabel(message)
+        msg_lbl.setFont(QFont("Segoe UI", 11))
+        msg_lbl.setStyleSheet("color: #333333; border: none; background: transparent;")
+        msg_lbl.setWordWrap(True)
+        msg_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        # أزرار
+        btn_layout = QHBoxLayout()
+        # تحديد نص الزر بناءً على اللغة
+        btn_text = "حسناً" if any(char in title for char in "أبتثجحخدذرزسشصضطظعغفقكلمنهوي") else "OK"
+        
+        ok_btn = QPushButton(btn_text)
+        ok_btn.setFixedSize(120, 40)
+        ok_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        ok_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {CYAN};
+                color: white;
+                border-radius: 12px;
+                font-weight: bold;
+                border: none;
+            }}
+            QPushButton:hover {{
+                background-color: {BLUE};
+            }}
+        """)
+        ok_btn.clicked.connect(self.accept)
+        
+        btn_layout.addStretch()
+        btn_layout.addWidget(ok_btn)
+        btn_layout.addStretch()
+        
+        layout.addWidget(title_lbl)
+        layout.addWidget(msg_lbl)
+        layout.addLayout(btn_layout)
+
+    def paintEvent(self, event):
+        # منع الرسم الافتراضي للخلفية لضمان عمل الحدود الدائرية
+        pass
 
 

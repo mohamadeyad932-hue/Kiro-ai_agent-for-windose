@@ -3,8 +3,9 @@
 توليد تلقائي
 """
 
-# جميع الصور (24 صورة)
+# جميع الصور (25 صورة)
 downloads_image_file = {
+    "3d-house": ".png",
     "Futuristic Humanoid Robot": ".png",
     "Gemini_Generated_Image_2kn3us2kn3us2kn3": ".png",
     "Gemini_Generated_Image_53xrui53xrui53xr": ".png",
