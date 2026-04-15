@@ -106,13 +106,9 @@ def main():
         if num_files <= 1:
             clusters = [0]
         else:
-            # هنا تم تقليل distance_threshold إلى 0.15 لزيادة الدقة بشكل كبير جداً
-            # (الملفات يجب أن تكون متطابقة جداً للولوج لنفس المجموعة)
             clustering = AgglomerativeClustering(
                 n_clusters=None, 
-                metric='cosine', 
-                distance_threshold=0.40,
-                linkage='average'
+                distance_threshold=1.5 #dont toutsh 
             )
             clusters = clustering.fit_predict(np.array(valid_vectors))
             

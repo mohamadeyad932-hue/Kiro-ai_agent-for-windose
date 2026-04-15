@@ -1,11 +1,17 @@
 import os
 import sys
+
+# إصلاح مشكلة الرموز التعبيرية في الويندوز
+sys.stdout.reconfigure(encoding="utf-8")
+
 from transformers import CLIPProcessor, CLIPModel
 
 
 def download_and_setup():
-    # 1. تحديد المجلد الحالي الذي يوجد فيه هذا السكربت (clip_local_model)
-    target_dir = os.path.dirname(os.path.abspath(__file__))
+    # 1. تحديد المجلد الرئيسي للمشروع وإنشاء مجلد فرعي باسم models/clip_local_model
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    target_dir = os.path.join(base_dir, "models", "clip_local_model")
+    os.makedirs(target_dir, exist_ok=True)
 
     print("=" * 50)
     print(f"🚀 بدء تجهيز محرك الصور كيرو (Kiro Image Engine)")

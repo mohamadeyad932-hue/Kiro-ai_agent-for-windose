@@ -11,23 +11,9 @@ import shutil
 import numpy as np
 from itertools import combinations
 from collections import defaultdict
-from rich import print as rprint
+
 sys.stdout.reconfigure(encoding="utf-8")
-import arabic_reshaper
-from bidi.algorithm import get_display
-import arabic_reshaper
-from bidi.algorithm import get_display
 
-def print_ar(text):
-    # 1. إعادة تشكيل الحروف (لجعلها متصلة)
-    reshaped_text = arabic_reshaper.reshape(text)
-    # 2. عكس الاتجاه (من اليمين لليسار) ليناسب عرض التيرمينال
-    bidi_text = get_display(reshaped_text)
-    print(bidi_text)
-
-# تجربة التشغيل
-print_ar("✅ تم إتمام التجميع بنجاح!")
-print_ar("📂 جاري تسمية المجلدات...")س
 try:
     import imagehash
     from PIL import Image
@@ -106,6 +92,10 @@ def compute_hashes(all_images):
         try:
             img = Image.open(path).convert("RGB")
             hashes[path] = imagehash.phash(img)
+        except PermissionError:
+            print(f"  ⚠ الصورة قيد الاستخدام (مقفولة). تم التخطي: {os.path.basename(path)}")
+        except FileNotFoundError:
+            print(f"  ⚠ اختفت الصورة (ربما نُقلت الآن): {os.path.basename(path)}")
         except Exception as e:
             print(f"  ⚠ خطأ: {os.path.basename(path)} → {e}")
     return hashes
@@ -190,6 +180,10 @@ def move_duplicates(duplicate_groups):
                 shutil.move(dup, dest)
                 moved_paths.add(dup)
                 print(f"    🔁 نُقل: {os.path.basename(dup)}")
+            except PermissionError:
+                print(f"    ⚠ فشل النقل، الصورة قيد الاستخدام (مقفولة): {os.path.basename(dup)}")
+            except FileNotFoundError:
+                print(f"    ⚠ اختفت الصورة قبل نقلها بلحظات: {os.path.basename(dup)}")
             except Exception as e:
                 print(f"    ⚠ خطأ في النقل: {e}")
 
@@ -228,9 +222,9 @@ def find_best_threshold(vectors):
     هيك كل مجلد بيحسب عتبته الخاصة بناءً على صوره
     """
     if len(vectors) < 3:
-        return 1.0  # قيمة افتراضية لو البيانات قليلة
+        return 0.3  # قيمة افتراضية لو البيانات قليلة
 
-    distances = pairwise_distances(vectors, metric="euclidean")
+    distances = pairwise_distances(vectors, metric="cosine")
     # خذ المسافات الفريدة من المثلث العلوي بس (بدون تكرار)
     upper = distances[np.triu_indices_from(distances, k=1)]
     # ربع المسافات الأقرب — يضمن تجميع المتشابه فقط
@@ -307,9 +301,13 @@ def run_clustering(moved_paths):
 
         clustering = AgglomerativeClustering(
             n_clusters=None,
-            metric="euclidean",
+<<<<<<< HEAD:clustring/clustring_file_images.py
+            metric="cosine",
             distance_threshold=threshold,
             linkage="average",
+=======
+            distance_threshold=5.0  # مناسب لمتجهات CLIP (المسافات بين 2.77 و 11.91)
+>>>>>>> 5ff352f0c0d7ee93308fb17d91d4238d61f86149:clustring_imge/clustring_file_images.py
         )
         clusters = clustering.fit_predict(np.array(valid_vectors))
 

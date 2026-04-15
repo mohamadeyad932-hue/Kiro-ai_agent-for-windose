@@ -8,5 +8,9 @@ bert_local_model/
 *.csv
 *.mp4
 *.exe
+<<<<<<< HEAD
 clip_local_model/ 
 
+=======
+model/
+>>>>>>> 5ff352f0c0d7ee93308fb17d91d4238d61f86149

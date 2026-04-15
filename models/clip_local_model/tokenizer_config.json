@@ -23,6 +23,7 @@
   "do_lower_case": true,
   "eos_token": "<|endoftext|>",
   "errors": "replace",
+  "extra_special_tokens": {},
   "model_max_length": 77,
   "pad_token": "<|endoftext|>",
   "processor_class": "CLIPProcessor",
