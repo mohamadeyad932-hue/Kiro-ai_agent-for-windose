@@ -27,7 +27,7 @@ def print_ar(text):
 
 # تجربة التشغيل
 print_ar("✅ تم إتمام التجميع بنجاح!")
-print_ar("📂 جاري تسمية المجلدات...")س
+print_ar("📂 جاري تسمية المجلدات...")
 try:
     import imagehash
     from PIL import Image

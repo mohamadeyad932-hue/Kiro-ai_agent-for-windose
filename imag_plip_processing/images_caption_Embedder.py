@@ -13,44 +13,13 @@ import transformers
 from PIL import Image
 from transformers import BlipProcessor, BlipForConditionalGeneration
 from transformers import AutoTokenizer, AutoModel
+from pathlib import Path
 
 # إخفاء تحذيرات مكتبة الترانزفورمرز لتنظيف مخرجات الشاشة
 transformers.logging.set_verbosity_error()
 sys.stdout.reconfigure(encoding='utf-8')
 
-# ─────────────── الإعدادات ───────────────
 
-IMAGE_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.bmp', '.gif', '.webp', '.tiff', '.tif', '.jfif'}
-BLIP_MODEL_PATH  = r"C:\Users\eyad\Desktop\Kiro-ai_agent-for-windose\models\model\blip-image-captioning-base"
-SBERT_MODEL_PATH = r"C:\Users\eyad\Desktop\Kiro-ai_agent-for-windose\models\sbert_high_res"
-HOME             = os.path.expanduser('~')
-OUTPUT_DIR       = os.path.dirname(os.path.abspath(__file__))
-
-FOLDERS = {
-    "desktop":   os.path.join(HOME, 'Desktop'),
-    "documents": os.path.join(HOME, 'Documents'),
-    "downloads": os.path.join(HOME, 'Downloads'),
-}
-
-# ─────────────── تحميل نموذج BLIP ───────────────
-
-print("جاري تحميل نموذج BLIP لتوصيف الصور...")
-blip_processor = BlipProcessor.from_pretrained(BLIP_MODEL_PATH, local_files_only=True)
-blip_model     = BlipForConditionalGeneration.from_pretrained(BLIP_MODEL_PATH, local_files_only=True)
-blip_device    = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-blip_model     = blip_model.to(blip_device)
-blip_model.eval()
-print(f"تم تحميل BLIP على: {blip_device}")
-
-# ─────────────── تحميل نموذج SBERT ───────────────
-
-print("جاري تحميل نموذج SBERT لتوليد البصمات...")
-sbert_tokenizer = AutoTokenizer.from_pretrained(SBERT_MODEL_PATH, local_files_only=True)
-sbert_model     = AutoModel.from_pretrained(SBERT_MODEL_PATH, local_files_only=True).to(blip_device)
-sbert_model.eval()
-print(f"تم تحميل SBERT على: {blip_device}\n")
-
-# ─────────────── الدوال الأساسية ───────────────
 
 
 def scan_images(path):
