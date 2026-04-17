@@ -3,14 +3,9 @@ cluster_to_folder_converter/main_converter.py
 ==============================================
 يقوم هذا السكريبت بقراءة جميع ملفات التجميع (clustring_files + clustring_imge)
 تلقائياً، واستخراج المتغيرات التي تمثل مجموعات ملفات متشابهة (Sets من مسارات).
-ثم يولّد لكل مجموعة اسم مجلد ذكي باستخدام TF-IDF على أسماء الملفات، وينسخ
-الملفات إلى مجلدات جديدة داخل المسار الأب للمجموعة.
-
-Workflow:
-  1. Auto-discover cluster variables from sibling directories.
-  2. Build a master dictionary: {group_name: list[file_paths]}.
-  3. For each group: clean filenames → TF-IDF → generate folder name.
-  4. Create folder (with numeric suffix if needed) → copy files via shutil.copy2.
+ثم يولّد لكل مجموعة اسم مجلد ذكي باستخدام TF-IDF على أسماء الملفات النصية، وينسخ
+الملفات إلى مجلدات جديدة داخل المسار المشترك للمجموعة. إذا كانت المجموعة صوراً، 
+يحتفظ باسم المتغير الأصلي.
 """
 
 import os
@@ -36,11 +31,13 @@ except ImportError:
 CURRENT_HOME = os.path.expanduser("~")
 
 # ── نمط regex للكشف عن مسارات مستخدم Windows مضمنة ──
-# يكتشف أي مسار يبدأ بـ C:\Users\<أي_اسم_مستخدم>\
 _USER_PATH_PATTERN = re.compile(
     r"^[A-Za-z]:\\Users\\[^\\]+",  # يطابق X:\Users\username
     re.IGNORECASE
 )
+
+# ── قائمة بامتدادات الصور الشائعة لاستثنائها من خوارزمية التسمية ──
+IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff', '.webp', '.svg', '.ico', '.heic'}
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -48,22 +45,8 @@ _USER_PATH_PATTERN = re.compile(
 # ──────────────────────────────────────────────────────────────────────
 
 def remap_path_to_current_user(original_path: str) -> str:
-    """
-    تحويل مسار ملف مضمن (مثل C:\\Users\\eyad\\Desktop\\file.pdf)
-    إلى مسار المستخدم الحالي (مثل C:\\Users\\HP\\Desktop\\file.pdf)
-    باستخدام os.path.expanduser("~").
-
-    إذا لم يتطابق المسار مع نمط C:\\Users\\<user>\\... يُعاد كما هو.
-
-    Args:
-        original_path: المسار الأصلي المُضمن في ملفات التجميع.
-
-    Returns:
-        المسار بعد إعادة التعيين للمستخدم الحالي.
-    """
     match = _USER_PATH_PATTERN.match(original_path)
     if match:
-        # نستبدل الجزء المطابق (مثل C:\Users\eyad) بـ CURRENT_HOME
         remapped = CURRENT_HOME + original_path[match.end():]
         return remapped
     return original_path
@@ -74,7 +57,6 @@ def remap_path_to_current_user(original_path: str) -> str:
 # ──────────────────────────────────────────────────────────────────────
 
 def _load_module_from_path(module_name: str, file_path: str):
-    """تحميل موديول بايثون ديناميكياً من مسار ملف."""
     spec = importlib.util.spec_from_file_location(module_name, file_path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -82,22 +64,11 @@ def _load_module_from_path(module_name: str, file_path: str):
 
 
 def discover_cluster_groups() -> Dict[str, List[str]]:
-    """
-    يبحث تلقائياً في مجلدات المشروع عن ملفات التجميع
-    (similar_*_files.py و similar_*_images.py و duplicates_*)
-    ويستخرج كل متغير من نوع set أو list يحتوي على مسارات ملفات.
-
-    Returns:
-        قاموس حيث كل مفتاح = اسم المتغير (مثل desktop_group_1)
-                  وكل قيمة = قائمة مسارات الملفات.
-    """
-    # ── تحديد جذر المشروع (المجلد الأب لـ cluster_to_folder_converter) ──
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-    # ── المجلدات التي تحتوي ملفات التجميع ──
+    # المجلدات التي تحتوي ملفات التجميع
     cluster_dirs = [
         os.path.join(project_root, "clustring_files"),
-        os.path.join(project_root, "clustring_imge"),
     ]
 
     master_dict: Dict[str, List[str]] = {}
@@ -107,7 +78,6 @@ def discover_cluster_groups() -> Dict[str, List[str]]:
             print(f"  [!] المجلد غير موجود: {cluster_dir}")
             continue
 
-        # ── نبحث عن ملفات similar_*.py في المجلد ──
         for filename in sorted(os.listdir(cluster_dir)):
             if not filename.endswith(".py"):
                 continue
@@ -115,7 +85,7 @@ def discover_cluster_groups() -> Dict[str, List[str]]:
                 continue
 
             file_path = os.path.join(cluster_dir, filename)
-            module_name = filename[:-3]  # بدون .py
+            module_name = filename[:-3]
 
             try:
                 mod = _load_module_from_path(module_name, file_path)
@@ -123,26 +93,21 @@ def discover_cluster_groups() -> Dict[str, List[str]]:
                 print(f"  [!] فشل تحميل {filename}: {e}")
                 continue
 
-            # ── نفحص كل متغير في الموديول ──
             for attr_name in dir(mod):
                 if attr_name.startswith("_"):
                     continue
 
                 value = getattr(mod, attr_name)
 
-                # نقبل فقط set أو list تحتوي على مسارات (strings)
                 if not isinstance(value, (set, list)):
                     continue
                 if not value:
                     continue
 
-                # نتحقق أن جميع العناصر هي سلاسل نصية (مسارات ملفات)
                 items = list(value)
                 if not all(isinstance(item, str) for item in items):
                     continue
 
-                # التحقق أن العناصر تبدو كمسارات ملفات فعلية
-                # (تحتوي على فاصل مسار أو حرف قرص)
                 looks_like_paths = all(
                     os.sep in item or "/" in item or ":" in item
                     for item in items
@@ -150,10 +115,7 @@ def discover_cluster_groups() -> Dict[str, List[str]]:
                 if not looks_like_paths:
                     continue
 
-                # ── إعادة تعيين المسارات إلى المستخدم الحالي ──
                 remapped_items = [remap_path_to_current_user(p) for p in items]
-
-                # ── تصفية: نحتفظ فقط بالملفات الموجودة فعلياً ──
                 existing_items = [p for p in remapped_items if os.path.isfile(p)]
                 skipped = len(remapped_items) - len(existing_items)
 
@@ -171,112 +133,59 @@ def discover_cluster_groups() -> Dict[str, List[str]]:
 
 
 # ──────────────────────────────────────────────────────────────────────
-# الخطوة 1: تنظيف أسماء الملفات
+# الخطوة 1: تنظيف أسماء الملفات (تم التعديل لدعم الأرقام)
 # ──────────────────────────────────────────────────────────────────────
 
 def clean_filename(file_path: str) -> str:
-    """
-    تنظيف اسم الملف لاستخدامه كمُدخل نصي لـ TF-IDF.
-
-    الخطوات:
-      1. استخراج اسم الملف فقط بدون المسار باستخدام os.path.basename.
-      2. إزالة الامتداد (.pdf, .docx, .jpg, ...).
-      3. استبدال الأرقام والرموز الخاصة (_ - ( ) وغيرها) بمسافات.
-      4. تحويل النص إلى lowercase.
-      5. تقسيم إلى tokens وإزالة الكلمات القصيرة جداً (حرف واحد).
-
-    Args:
-        file_path: المسار الكامل للملف.
-
-    Returns:
-        سلسلة نصية نظيفة من كلمات مفصولة بمسافات.
-    """
-    # الخطوة 1: استخراج اسم الملف
     basename = os.path.basename(file_path)
-
-    # الخطوة 2: إزالة الامتداد
     name_without_ext = os.path.splitext(basename)[0]
-
-    # الخطوة 3: استبدال الأرقام والرموز بمسافات
-    # نستبدل أي حرف ليس حرفاً أبجدياً (عربي أو إنجليزي) بمسافة
-    cleaned = re.sub(r"[^a-zA-Z\u0600-\u06FF]", " ", name_without_ext)
-
-    # الخطوة 4: تحويل إلى lowercase
+    # إبقاء الأرقام بدل حذفها
+    cleaned = re.sub(r"[^a-zA-Z0-9\u0600-\u06FF]", " ", name_without_ext)
     cleaned = cleaned.lower()
-
-    # الخطوة 5: تقسيم وتصفية
     tokens = cleaned.split()
-    # إزالة الكلمات المكونة من حرف واحد (فقط الإنجليزية)
-    tokens = [t for t in tokens if len(t) > 1 or not t.isascii()]
-
+    tokens = [t for t in tokens if len(t) > 1]
     return " ".join(tokens)
 
 
 # ──────────────────────────────────────────────────────────────────────
-# الخطوة 2: توليد اسم مجلد ذكي باستخدام TF-IDF
+# الخطوة 2: توليد اسم مجلد ذكي باستخدام TF-IDF (تم التعديل لدعم العربية وتخطي الصور)
 # ──────────────────────────────────────────────────────────────────────
 
-def generate_folder_name_tfidf(file_paths: List[str]) -> str:
-    """
-    توليد اسم مجلد وصفي بناءً على أسماء الملفات في المجموعة.
+def generate_folder_name_tfidf(file_paths: List[str], default_name: str) -> str:
+    files_for_naming = [
+        fp for fp in file_paths
+        if os.path.splitext(fp)[1].lower() not in IMAGE_EXTENSIONS
+    ]
 
-    المنهجية:
-      - كل اسم ملف يُعامل كـ Document مستقل.
-      - نستخدم TfidfVectorizer مع stop_words='english' و ngram_range=(1,2).
-      - نحسب متوسط قيمة TF-IDF لكل كلمة/عبارة عبر جميع الملفات.
-      - نختار أعلى 2-4 كلمات حسب المتوسط.
-      - إذا فشل TF-IDF (كلمات قليلة أو نتائج فارغة)، نستخدم
-        أكثر الكلمات تكراراً كـ fallback.
+    # إذا كانت جميع الملفات صوراً، نستخدم الاسم الأصلي (المتغير) للمجموعة
+    if not files_for_naming:
+        return default_name
 
-    Args:
-        file_paths: قائمة مسارات الملفات في المجموعة.
-
-    Returns:
-        اسم مجلد مكوّن من 2-4 كلمات مفصولة بمسافة.
-    """
-    # ── تنظيف جميع أسماء الملفات ──
-    cleaned_names = [clean_filename(fp) for fp in file_paths]
-
-    # ── إزالة المستندات الفارغة ──
+    cleaned_names = [clean_filename(fp) for fp in files_for_naming]
     non_empty = [name for name in cleaned_names if name.strip()]
 
+    # إذا كانت الملفات النصية فارغة أو بدون أسماء واضحة، نستخدم الاسم الأصلي
     if not non_empty:
-        return "untitled group"
+        return default_name
 
-    # ── محاولة TF-IDF ──
-    folder_name = _tfidf_approach(non_empty)
+    # اكتشاف اللغة وتحديد stop_words مناسب
+    has_arabic = any(re.search(r'[\u0600-\u06FF]', name) for name in non_empty)
+    stop_words = None if has_arabic else "english"
 
-    if folder_name:
-        return folder_name
+    folder_name = _tfidf_approach(non_empty, stop_words=stop_words)
+    
+    # إذا فشل TF-IDF، نلجأ للتكرار، وإذا فشل أيضاً نستخدم الاسم الأصلي
+    return folder_name or _frequency_fallback(non_empty) or default_name
 
-    # ── Fallback: أكثر الكلمات تكراراً ──
-    return _frequency_fallback(non_empty)
 
-
-def _tfidf_approach(documents: List[str]) -> Optional[str]:
-    """
-    محاولة توليد اسم مجلد باستخدام TF-IDF.
-
-    منطق اختيار كلمات TF-IDF:
-      - نستخدم TfidfVectorizer مع stop_words='english' لإزالة الكلمات الشائعة.
-      - ngram_range=(1,2) للسماح بعبارات من كلمة أو كلمتين.
-      - نحسب متوسط TF-IDF لكل مصطلح عبر جميع المستندات.
-      - نرتب تنازلياً ونختار أعلى 2-4 مصطلحات.
-
-    Args:
-        documents: قائمة النصوص النظيفة (كل عنصر = اسم ملف منظف).
-
-    Returns:
-        اسم المجلد أو None إذا فشل.
-    """
+def _tfidf_approach(documents: List[str], stop_words=None) -> Optional[str]:
     try:
         vectorizer = TfidfVectorizer(
-            stop_words="english",
+            stop_words=stop_words,
             ngram_range=(1, 2),
         )
         tfidf_matrix = vectorizer.fit_transform(documents)
     except ValueError:
-        # يحدث عندما تكون جميع المستندات فارغة بعد إزالة stop words
         return None
 
     feature_names = vectorizer.get_feature_names_out()
@@ -284,15 +193,10 @@ def _tfidf_approach(documents: List[str]) -> Optional[str]:
     if len(feature_names) == 0:
         return None
 
-    # ── حساب متوسط TF-IDF لكل مصطلح عبر جميع المستندات ──
-    # tfidf_matrix: sparse matrix (n_docs × n_features)
     import numpy as np
     mean_scores = np.asarray(tfidf_matrix.mean(axis=0)).flatten()
-
-    # ── ترتيب تنازلي ──
     sorted_indices = mean_scores.argsort()[::-1]
 
-    # ── اختيار أعلى 2-4 كلمات ──
     top_terms = []
     for idx in sorted_indices:
         term = feature_names[idx]
@@ -301,7 +205,6 @@ def _tfidf_approach(documents: List[str]) -> Optional[str]:
         if score <= 0:
             break
 
-        # تجنب إضافة bigram إذا كانت كلماته موجودة بالفعل
         term_words = term.split()
         if len(term_words) == 2:
             if term_words[0] in top_terms or term_words[1] in top_terms:
@@ -309,94 +212,66 @@ def _tfidf_approach(documents: List[str]) -> Optional[str]:
 
         top_terms.append(term)
 
-        if len(top_terms) >= 4:
+        if len(top_terms) >= 3:
             break
 
-    if len(top_terms) < 2:
+    if len(top_terms) < 1:
         return None
 
     return " ".join(top_terms[:4])
 
 
 def _frequency_fallback(documents: List[str]) -> str:
-    """
-    Fallback: إذا فشل TF-IDF، نستخدم أكثر الكلمات تكراراً.
-
-    Args:
-        documents: قائمة النصوص النظيفة.
-
-    Returns:
-        اسم مجلد من 2-4 كلمات.
-    """
     all_words = []
     for doc in documents:
         all_words.extend(doc.split())
 
     if not all_words:
-        return "untitled group"
+        return ""
 
     word_counts = Counter(all_words)
-    # نختار أعلى 4 كلمات تكراراً
     most_common = word_counts.most_common(4)
-
-    # نضمن حد أدنى 2 كلمات
     selected = [word for word, _ in most_common]
 
     if len(selected) < 2:
-        # إذا كلمة واحدة فقط، نكررها مع "files"
         selected.append("files")
 
     return " ".join(selected[:4])
 
 
 # ──────────────────────────────────────────────────────────────────────
-# الخطوة 3: تحديد المسار الأساسي (Base Path)
+# الخطوة 3: تحديد المسار المشترك وتنسيق اسم المجلد
 # ──────────────────────────────────────────────────────────────────────
 
 def get_base_path(file_paths: List[str]) -> str:
-    """
-    تحديد المسار الأب الذي سيتم إنشاء المجلد الجديد فيه.
+    # أخذ المسار المشترك بين جميع الملفات
+    try:
+        dirs = [os.path.dirname(p) for p in file_paths]
+        return os.path.commonpath(dirs)
+    except ValueError:
+        # Fallback في حال كانت الملفات على أقراص (Drives) مختلفة في ويندوز
+        return os.path.dirname(file_paths[0])
 
-    سبب اختيار Base Path:
-      نستخدم أول ملف في المجموعة لأن جميع ملفات المجموعة الواحدة
-      عادةً ما تكون في نفس المجلد (Desktop أو Documents أو Downloads).
-      المسار الأب لأول ملف يمثل المجلد الأصلي للمجموعة، وهو المكان
-      الطبيعي والمنطقي لإنشاء المجلد الفرعي الجديد.
 
-    Args:
-        file_paths: قائمة مسارات الملفات في المجموعة.
-
-    Returns:
-        المسار الأب لأول ملف في القائمة.
-    """
-    first_file = file_paths[0]
-    base_path = os.path.dirname(first_file)
-    return base_path
+def sanitize_folder_name(name: str) -> str:
+    # استبدال المسافات بـ underscore، وإزالة الرموز غير المسموحة
+    name = name.strip()
+    name = re.sub(r'[<>:"/\\|?*]', '', name)  # رموز محظورة في Windows
+    name = re.sub(r'\s+', '_', name)
+    return name or "untitled_group"
 
 
 # ──────────────────────────────────────────────────────────────────────
-# الخطوة 4: إنشاء المجلد ونسخ الملفات
+# الخطوة 4: إنشاء المجلد ونسخ الملفات (مع معالجة التكرار)
 # ──────────────────────────────────────────────────────────────────────
 
 def create_unique_folder(base_path: str, folder_name: str) -> str:
-    """
-    إنشاء مجلد باسم فريد.
-    إذا كان الاسم موجوداً مسبقاً، نضيف suffix رقمي (_1, _2, ...).
-
-    Args:
-        base_path: المسار الأب لإنشاء المجلد فيه.
-        folder_name: الاسم المُقترح للمجلد.
-
-    Returns:
-        المسار الكامل للمجلد الذي تم إنشاؤه.
-    """
     target_path = os.path.join(base_path, folder_name)
 
     if not os.path.exists(target_path):
         os.makedirs(target_path, exist_ok=True)
         return target_path
 
-    # إضافة suffix رقمي لتجنب التعارض
     suffix = 1
     while True:
         new_path = os.path.join(base_path, f"{folder_name}_{suffix}")
@@ -407,30 +282,28 @@ def create_unique_folder(base_path: str, folder_name: str) -> str:
 
 
 def copy_files_to_folder(file_paths: List[str], folder_path: str) -> Tuple[int, int]:
-    """
-    نسخ جميع الملفات إلى المجلد المُحدد باستخدام shutil.copy2.
-
-    ملاحظة: نستخدم shutil.copy2 (وليس shutil.move أو os.rename) للحفاظ
-    على الملفات الأصلية في مكانها. copy2 ينسخ أيضاً metadata الملف.
-
-    Args:
-        file_paths: قائمة مسارات الملفات المراد نسخها.
-        folder_path: مسار المجلد الهدف.
-
-    Returns:
-        Tuple[عدد الملفات المنسوخة بنجاح, عدد الملفات التي فشل نسخها].
-    """
     success_count = 0
     fail_count = 0
 
     for file_path in file_paths:
         try:
-            if os.path.isfile(file_path):
-                shutil.copy2(file_path, folder_path)
-                success_count += 1
-            else:
+            if not os.path.isfile(file_path):
                 print(f"    [!] الملف غير موجود: {os.path.basename(file_path)}")
                 fail_count += 1
+                continue
+                
+            dest = os.path.join(folder_path, os.path.basename(file_path))
+            
+            # تجنب الكتابة فوق ملف موجود بنفس الاسم
+            if os.path.exists(dest):
+                base, ext = os.path.splitext(os.path.basename(file_path))
+                counter = 1
+                while os.path.exists(dest):
+                    dest = os.path.join(folder_path, f"{base}_{counter}{ext}")
+                    counter += 1
+                    
+            shutil.copy2(file_path, dest)
+            success_count += 1
         except Exception as e:
             print(f"    [✗] فشل نسخ {os.path.basename(file_path)}: {e}")
             fail_count += 1
@@ -443,12 +316,6 @@ def copy_files_to_folder(file_paths: List[str], folder_path: str) -> Tuple[int, 
 # ──────────────────────────────────────────────────────────────────────
 
 def process_all_clusters(cluster_dict: Dict[str, List[str]]) -> None:
-    """
-    معالجة جميع المجموعات: توليد أسماء مجلدات → إنشاء مجلدات → نسخ ملفات.
-
-    Args:
-        cluster_dict: القاموس الرئيسي {اسم_المجموعة: [قائمة_المسارات]}.
-    """
     if not cluster_dict:
         print("\n[!] لم يتم العثور على أي مجموعات للمعالجة.")
         return
@@ -469,20 +336,20 @@ def process_all_clusters(cluster_dict: Dict[str, List[str]]) -> None:
             print("  [!] المجموعة فارغة، تم التخطي.")
             continue
 
-        # ── توليد اسم المجلد ──
-        folder_name = generate_folder_name_tfidf(file_paths)
+        # توليد وتنظيف اسم المجلد مع تمرير اسم المتغير كاسم افتراضي
+        raw_folder_name = generate_folder_name_tfidf(file_paths, default_name=group_name)
+        folder_name = sanitize_folder_name(raw_folder_name)
         print(f"  اسم المجلد المُقترح: \"{folder_name}\"")
 
-        # ── تحديد المسار الأساسي ──
+        # تحديد المسار الأساسي المشترك
         base_path = get_base_path(file_paths)
         print(f"  المسار الأساسي: {base_path}")
 
-        # ── التحقق من وجود المسار الأساسي ──
         if not os.path.isdir(base_path):
             print(f"  [!] المسار الأساسي غير موجود: {base_path} — تم التخطي.")
             continue
 
-        # ── إنشاء المجلد ──
+        # إنشاء المجلد
         try:
             created_path = create_unique_folder(base_path, folder_name)
             print(f"  تم إنشاء المجلد: {created_path}")
@@ -491,13 +358,13 @@ def process_all_clusters(cluster_dict: Dict[str, List[str]]) -> None:
             print(f"  [✗] فشل إنشاء المجلد: {e}")
             continue
 
-        # ── نسخ الملفات ──
+        # نسخ الملفات
         copied, failed = copy_files_to_folder(file_paths, created_path)
         total_copied += copied
         total_failed += failed
         print(f"  النتيجة: {copied} ملف تم نسخه ✓ | {failed} فشل ✗")
 
-    # ── ملخص نهائي ──
+    # ملخص نهائي
     print(f"\n{'='*60}")
     print(f"  ✅ تمت العملية بنجاح!")
     print(f"  المجلدات المُنشأة: {total_folders}")
@@ -508,13 +375,11 @@ def process_all_clusters(cluster_dict: Dict[str, List[str]]) -> None:
 
 
 def main() -> None:
-    """نقطة الدخول الرئيسية للبرنامج."""
     print("╔══════════════════════════════════════════════════════════╗")
-    print("║   Cluster → Folder Converter                           ║")
-    print("║   تحويل مجموعات الملفات المتشابهة إلى مجلدات منظمة    ║")
+    print("║   Cluster → Folder Converter                             ║")
+    print("║   تحويل مجموعات الملفات المتشابهة إلى مجلدات منظمة       ║")
     print("╚══════════════════════════════════════════════════════════╝")
 
-    # ── الخطوة 1: اكتشاف المجموعات تلقائياً ──
     print("\n[1/2] جاري البحث عن مجموعات الملفات...")
     cluster_dict = discover_cluster_groups()
 
@@ -527,7 +392,6 @@ def main() -> None:
 
     print(f"\n  → تم العثور على {len(cluster_dict)} مجموعة إجمالاً.\n")
 
-    # ── الخطوة 2: المعالجة والنسخ ──
     print("[2/2] جاري إنشاء المجلدات ونسخ الملفات...")
     process_all_clusters(cluster_dict)
 

@@ -26,11 +26,18 @@ SBERT_MODEL_PATH = r"C:\Users\eyad\Desktop\Kiro-ai_agent-for-windose\models\sber
 HOME             = os.path.expanduser('~')
 OUTPUT_DIR       = os.path.dirname(os.path.abspath(__file__))
 
-FOLDERS = {
-    "desktop":   os.path.join(HOME, 'Desktop'),
-    "documents": os.path.join(HOME, 'Documents'),
-    "downloads": os.path.join(HOME, 'Downloads'),
-}
+# Check for custom path argument
+if len(sys.argv) > 1 and os.path.isdir(sys.argv[1]):
+    print(f"[*] Custom image path detected: {sys.argv[1]}")
+    FOLDERS = {
+        "custom_folder": sys.argv[1]
+    }
+else:
+    FOLDERS = {
+        "desktop":   os.path.join(HOME, 'Desktop'),
+        "documents": os.path.join(HOME, 'Documents'),
+        "downloads": os.path.join(HOME, 'Downloads'),
+    }
 
 # ─────────────── تحميل نموذج BLIP ───────────────
 

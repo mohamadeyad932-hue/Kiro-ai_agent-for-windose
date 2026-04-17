@@ -1,0 +1,88 @@
+المجموعة: desktop_group_1
+المسار: C:\Users\eyad\Desktop\desktop_group_1
+عدد الملفات: 3
+------------------------------
+المجموعة: desktop_group_2
+المسار: C:\Users\eyad\Desktop\desktop_group_2
+عدد الملفات: 6
+------------------------------
+المجموعة: desktop_group_3
+المسار: C:\Users\eyad\Desktop\desktop_group_3
+عدد الملفات: 1
+------------------------------
+المجموعة: desktop_group_4
+المسار: C:\Users\eyad\Desktop\desktop_group_4
+عدد الملفات: 1
+------------------------------
+المجموعة: desktop_group_5
+المسار: C:\Users\eyad\Desktop\desktop_group_5
+عدد الملفات: 5
+------------------------------
+المجموعة: desktop_group_6
+المسار: C:\Users\eyad\Desktop\desktop_group_6
+عدد الملفات: 2
+------------------------------
+المجموعة: desktop_group_7
+المسار: C:\Users\eyad\Desktop\desktop_group_7
+عدد الملفات: 1
+------------------------------
+المجموعة: desktop_group_8
+المسار: C:\Users\eyad\Desktop\desktop_group_8
+عدد الملفات: 4
+------------------------------
+المجموعة: desktop_group_9
+المسار: C:\Users\eyad\Desktop\desktop_group_9
+عدد الملفات: 1
+------------------------------
+المجموعة: desktop_group_10
+المسار: C:\Users\eyad\Desktop\desktop_group_10
+عدد الملفات: 1
+------------------------------
+المجموعة: documents_group_1
+المسار: C:\Users\eyad\Documents\documents_group_1_3
+عدد الملفات: 1
+------------------------------
+المجموعة: documents_group_2
+المسار: C:\Users\eyad\Documents\documents_group_2_3
+عدد الملفات: 1
+------------------------------
+المجموعة: documents_group_3
+المسار: C:\Users\eyad\Documents\documents_group_3_3
+عدد الملفات: 4
+------------------------------
+المجموعة: documents_group_4
+المسار: C:\Users\eyad\Documents\documents_group_4_3
+عدد الملفات: 2
+------------------------------
+المجموعة: documents_group_5
+المسار: C:\Users\eyad\Documents\documents_group_5
+عدد الملفات: 1
+------------------------------
+المجموعة: documents_group_6
+المسار: C:\Users\eyad\Documents\documents_group_6
+عدد الملفات: 1
+------------------------------
+المجموعة: downloads_group_1
+المسار: C:\Users\eyad\Downloads\downloads_group_1_3
+عدد الملفات: 13
+------------------------------
+المجموعة: downloads_group_2
+المسار: C:\Users\eyad\Downloads\downloads_group_2_3
+عدد الملفات: 6
+------------------------------
+المجموعة: downloads_group_3
+المسار: C:\Users\eyad\Downloads\downloads_group_3_3
+عدد الملفات: 1
+------------------------------
+المجموعة: downloads_group_4
+المسار: C:\Users\eyad\Downloads\downloads_group_4_3
+عدد الملفات: 1
+------------------------------
+المجموعة: downloads_group_5
+المسار: C:\Users\eyad\Downloads\downloads_group_5_3
+عدد الملفات: 1
+------------------------------
+المجموعة: downloads_group_6
+المسار: C:\Users\eyad\Downloads\downloads_group_6_3
+عدد الملفات: 1
+------------------------------

@@ -1,47 +1,32 @@
 import os
 import sys
 import numpy as np
+import importlib
 from collections import defaultdict
 
-# Force UTF-8 encoding for standard output to avoid garbled Arabic in terminal
-sys.stdout.reconfigure(encoding='utf-8')
+# Force UTF-8 encoding for standard output
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding='utf-8')
 
 try:
     from sklearn.cluster import AgglomerativeClustering
 except ImportError:
-    print("Please ensure libraries are installed:")
-    print("pip install scikit-learn numpy")
+    print("Please ensure libraries are installed: pip install scikit-learn numpy")
     sys.exit(1)
 
-# إضافة مسار مجلد text_file_prossing ليتمكن بايثون من استيراد القواميس منه
+# Path to processing directory
 PROCESSING_DIR = r"c:\Users\eyad\Desktop\Kiro-ai_agent-for-windose\Processing text files"
 if PROCESSING_DIR not in sys.path:
     sys.path.append(PROCESSING_DIR)
 
-# Import dictionaries and BERT vectors (768 dimensions)
-try:
-    from desktop_files import desktop_file # type: ignore
-    from desktop_vectors import desktop_vectors # type: ignore
-except ImportError:
-    desktop_file = {}; desktop_vectors = {}
-
-try:
-    from documents_files import documents_file # type: ignore
-    from documents_vectors import documents_vectors # type: ignore
-except ImportError:
-    documents_file = {}; documents_vectors = {}
-
-try:
-    from downloads_files import downloads_file # type: ignore
-    from downloads_vectors import downloads_vectors # type: ignore
-except ImportError:
-    downloads_file = {}; downloads_vectors = {}
-
+def dynamic_import(name):
+    """Safely import a module by name"""
+    try:
+        return importlib.import_module(name)
+    except ImportError:
+        return None
 
 def save_cluster_scripts(folder_name, folder_sets):
-    """
-    دالة لحفظ المجموعات في سكريبتات بأسماء ومتغيرات باللغة الإنجليزية حصراً.
-    """
     script_name = f"similar_{folder_name}_files.py"
     output_dir = os.path.dirname(os.path.abspath(__file__))
     script_path = os.path.join(output_dir, script_name)
@@ -63,79 +48,86 @@ def save_cluster_scripts(folder_name, folder_sets):
         
     with open(script_path, 'w', encoding='utf-8') as f:
         f.write('\n'.join(lines))
-        
     print(f"  [+] Saved script: {script_name}")
-
 
 def main():
     home = os.path.expanduser("~")
     
-    # folder_name (English), folder_path, files_dict, vectors_dict
-    folders_data = [
-        ("desktop", os.path.join(home, "Desktop"), desktop_file, desktop_vectors),
-        ("documents", os.path.join(home, "Documents"), documents_file, documents_vectors),
-        ("downloads", os.path.join(home, "Downloads"), downloads_file, downloads_vectors)
-    ]
+    # Check for custom path
+    custom_path = sys.argv[1] if len(sys.argv) > 1 and os.path.isdir(sys.argv[1]) else None
+    
+    if custom_path:
+        print(f"[*] Custom path clustering: {custom_path}")
+        # Try to import custom data
+        mod_files = dynamic_import("custom_folder_files")
+        mod_vecs = dynamic_import("custom_folder_vectors")
+        
+        if not mod_files or not mod_vecs:
+            print("[!] Error: Could not find custom_folder_files or vectors. Did the embedder run first?")
+            return
+
+        folders_data = [
+            ("custom_folder", custom_path, getattr(mod_files, "custom_folder_file", {}), getattr(mod_vecs, "custom_folder_vectors", {}))
+        ]
+    else:
+        # Standard folders
+        import desktop_files, desktop_vectors, documents_files, documents_vectors, downloads_files, downloads_vectors
+        folders_data = [
+            ("desktop", os.path.join(home, "Desktop"), getattr(desktop_files, "desktop_file", {}), getattr(desktop_vectors, "desktop_vectors", {})),
+            ("documents", os.path.join(home, "Documents"), getattr(documents_files, "documents_file", {}), getattr(documents_vectors, "documents_vectors", {})),
+            ("downloads", os.path.join(home, "Downloads"), getattr(downloads_files, "downloads_file", {}), getattr(downloads_vectors, "downloads_vectors", {}))
+        ]
 
     print("=" * 60)
-    print("بدء عملية التجميع (بدقة عالية) بالاعتماد على بصمات BERT...")
+    print("Starting Clustering (High Precision) using BERT embeddings...")
     print("=" * 60)
 
     for folder_name, folder_path, files_dict, vectors_dict in folders_data:
         if not files_dict or not vectors_dict:
-            print(f"\n[{folder_name}] لم يتم العثور على بصمات. تم التخطي.")
+            print(f"\n[{folder_name}] No files or vectors found. Skipping.")
             continue
             
-        print(f"\n[{folder_name}] جاري تحليل البصمات وتجميع الملفات...")
+        print(f"\n[{folder_name}] Analyzing {len(files_dict)} files...")
         
         valid_names = []
         valid_vectors = []
-        
-        for name, ext in files_dict.items():
+        for name in files_dict:
             if name in vectors_dict:
                 valid_names.append(name)
                 valid_vectors.append(vectors_dict[name])
                 
         if not valid_names:
-            print(f"  - القواميس فارغة.\n")
+            print(f"  - No valid vectors.\n")
             continue
             
         num_files = len(valid_names)
-        folder_clustered_sets = {}
-        
         if num_files <= 1:
             clusters = [0]
         else:
-            clustering = AgglomerativeClustering(
-                n_clusters=None, 
-                distance_threshold=1.5 #dont toutsh 
-            )
+            clustering = AgglomerativeClustering(n_clusters=None, distance_threshold=1.5)
             clusters = clustering.fit_predict(np.array(valid_vectors))
             
         cluster_dict = defaultdict(list)
         for name, c_id in zip(valid_names, clusters):
             cluster_dict[c_id].append(name)
             
-        # إنشاء أسماء المتغيرات بالإنجليزية: foldername_group_1, foldername_group_2 وهكذا
         group_counter = 1
+        folder_clustered_sets = {}
         for c_id, names_list in cluster_dict.items():
             full_paths = []
             for name in names_list:
                 ext = files_dict[name]
-                full_path = os.path.join(folder_path, name + ext)
-                full_paths.append(full_path)
+                full_paths.append(os.path.join(folder_path, name + ext))
                 
             set_name = f"{folder_name}_group_{group_counter}"
             folder_clustered_sets[set_name] = set(full_paths)
             group_counter += 1
             
-        print(f"  - تم إنشاء {len(cluster_dict)} مجموعة (Sets) بأسماء إنجليزية.")
-        
         save_cluster_scripts(folder_name, folder_clustered_sets)
 
     print("\n" + "=" * 60)
-    print("تم إتمام العملية بنجاح!")
+    print("Clustering Process Finished!")
     print("=" * 60)
-        
+
 if __name__ == "__main__":
     main()
