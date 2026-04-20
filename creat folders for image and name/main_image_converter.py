@@ -261,6 +261,19 @@ def main():
         except Exception as e:
             print(f"    [!] خطأ في معالجة المجموعة: {e}")
             
+    # Cleanup: Delete the cluster files after successful processing
+    print("\n[*] جاري تنظيف ملفات التجميع المؤقتة...")
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    cluster_dir = os.path.join(project_root, "clustring_imge")
+    if os.path.isdir(cluster_dir):
+        for filename in os.listdir(cluster_dir):
+            if filename.startswith("similar_") and filename.endswith(".py"):
+                try:
+                    os.remove(os.path.join(cluster_dir, filename))
+                    print(f"  [✓] تم حذف: {filename}")
+                except Exception as e:
+                    print(f"  [!] فشل حذف {filename}: {e}")
+
     print("\n--- تمت العملية بنجاح! ---")
 
 if __name__ == "__main__":

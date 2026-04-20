@@ -1,10 +1,10 @@
 """
-قاموس صور مجلد downloads
+قاموس ملفات الصور في مجلد downloads
 توليد تلقائي
 """
 
-# جميع الصور (25 صورة)
-downloads_image_file = {
+# جميع الصور ذات اللواحق المستهدفة (25 ملف)
+downloads_images = {
     "3d-house": ".png",
     "Futuristic Humanoid Robot": ".png",
     "Gemini_Generated_Image_2kn3us2kn3us2kn3": ".png",

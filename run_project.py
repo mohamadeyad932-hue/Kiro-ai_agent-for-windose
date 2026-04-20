@@ -39,29 +39,47 @@ def run_script(dir_name, script_name, description, custom_path=None):
         print(f"\n[!] Unexpected Error: {e}")
         return False
 
-def process_text(custom_path=None):
-    print("\n>>> Starting Text Processing Pipeline <<<")
+def process_text_collection(custom_path=None):
+    print("\n>>> Collecting Text Data (Embedding & Clustering) <<<")
     steps = [
         ("Processing text files", "files_Embedder.py", "Text Embedding"),
-        ("clustring_files", "clustring_file_text.py", "Text Clustering"),
-        ("creat folders for flie_text  and name", "main_converter.py", "Text Organization")
+        ("clustring_files", "clustring_file_text.py", "Text Clustering")
     ]
     for d, s, desc in steps:
         if not run_script(d, s, desc, custom_path):
             return False
     return True
 
-def process_images(custom_path=None):
-    print("\n>>> Starting Image Processing Pipeline <<<")
+def process_images_collection(custom_path=None):
+    print("\n>>> Collecting Image Data (Captioning & Clustering) <<<")
     steps = [
         ("Processing image", "images_caption_Embedder.py", "Image Captioning"),
-        ("clustring_imge", "clustring_image_captions.py", "Image Clustering"),
-        ("creat folders for image and name", "main_image_converter.py", "Image Organization")
+        ("clustring_imge", "clustring_image_captions.py", "Image Clustering")
     ]
     for d, s, desc in steps:
         if not run_script(d, s, desc, custom_path):
             return False
     return True
+
+def select_paths():
+    """Allows the user to select multiple target paths"""
+    paths = {}
+    print("\n[?] Select the paths you want to process:")
+    if input("    - Include Desktop? (y/n): ").lower() == 'y':
+        paths["desktop"] = os.path.join(os.path.expanduser('~'), 'Desktop')
+    if input("    - Include Documents? (y/n): ").lower() == 'y':
+        paths["documents"] = os.path.join(os.path.expanduser('~'), 'Documents')
+    if input("    - Include Downloads? (y/n): ").lower() == 'y':
+        paths["downloads"] = os.path.join(os.path.expanduser('~'), 'Downloads')
+    
+    if input("\n[?] Would you like to add a CUSTOM folder path manually? (y/n): ").lower() == 'y':
+        custom = input("    Please enter the FULL path to the folder: ").strip()
+        if os.path.isdir(custom):
+            paths["custom_folder"] = custom
+        else:
+            print(f"    [!] Invalid path or directory not found: {custom}")
+            
+    return paths
 
 def main():
     os.system('cls' if os.name == 'nt' else 'clear')
@@ -69,57 +87,51 @@ def main():
     print("║             KIRO AI AGENT - SMART LAUNCHER               ║")
     print("║                Project Management Core                   ║")
     print("╚══════════════════════════════════════════════════════════╝")
-    print("\nPlease select the processing mode:")
-    print("1. Full System (Standard Folders)")
-    print("2. Text Only (Standard Folders)")
-    print("3. Image Only (Standard Folders)")
-    print("4. Custom Path Processing (Enter your own path)")
-    print("5. Exit")
+    print("\n1. Full System Processing (Text & Images)")
+    print("2. Text Files Only")
+    print("3. Images Only")
+    print("4. Exit")
     
-    choice = input("\nEnter your choice [1-5]: ")
+    mode_choice = input("\nPlease select processing mode [1-4]: ")
     
-    custom_path = None
-    if choice == '4':
-        custom_path = input("\n[?] Please enter the FULL path to the folder: ").strip()
-        if not os.path.isdir(custom_path):
-            print(f"[!] Error: '{custom_path}' is not a valid directory.")
-            input("\nPress Enter to return...")
-            return main()
-        
-        # Ask what to process in this custom folder
-        print("\nWhat do you want to process in this path?")
-        print("A. Everything (Text & Images)")
-        print("B. Text Files Only")
-        print("C. Images Only")
-        sub_choice = input("Select [A, B, C]: ").upper()
-        
-        start_time = time.time()
-        if sub_choice == 'A':
-            process_text(custom_path)
-            process_images(custom_path)
-        elif sub_choice == 'B':
-            process_text(custom_path)
-        elif sub_choice == 'C':
-            process_images(custom_path)
-        else:
-            print("[!] Invalid Sub-choice.")
-            return
+    if mode_choice == '4':
+        print("Goodbye!")
+        return
 
-    elif choice == '1':
+    if mode_choice in ['1', '2', '3']:
+        # Phase 2: Selection of Paths
+        target_paths = select_paths()
+        
+        if not target_paths:
+            print("\n[!] No valid paths selected. Returning to menu...")
+            time.sleep(2)
+            return main()
+            
+        # Phase 2: Execution
         start_time = time.time()
-        process_text()
-        process_images()
-    elif choice == '2':
-        start_time = time.time()
-        process_text()
-    elif choice == '3':
-        start_time = time.time()
-        process_images()
-    elif choice == '5':
-        return
-    else:
-        print("[!] Invalid selection.")
-        return
+        
+        # 2a. Embedding & Clustering (Collect data from all paths)
+        for name, path in target_paths.items():
+            print(f"\n{'='*50}")
+            print(f"[*] Processing: {name.upper()} ({path})")
+            print(f"{'='*50}")
+            
+            if mode_choice == '1': # Full System
+                process_text_collection(path)
+                process_images_collection(path)
+            elif mode_choice == '2': # Text Only
+                process_text_collection(path)
+            elif mode_choice == '3': # Images Only
+                process_images_collection(path)
+        
+        # 2b. Organization (Run once globally)
+        print(f"\n{'='*50}")
+        print(f"[*] FINAL STEP: Organizing Files into Folders")
+        print(f"{'='*50}")
+        if mode_choice in ['1', '2']:
+            run_script("creat folders for flie_text  and name", "main_converter.py", "Final Text Organization")
+        if mode_choice in ['1', '3']:
+            run_script("creat folders for image and name", "main_image_converter.py", "Final Image Organization")
 
     print(f"\n{'-'*50}")
     print(f"Total time elapsed: {time.time() - start_time:.2f} seconds")
