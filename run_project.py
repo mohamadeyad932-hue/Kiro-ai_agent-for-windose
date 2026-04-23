@@ -2,6 +2,7 @@ import subprocess
 import os
 import sys
 import time
+import argparse
 
 def run_script(dir_name, script_name, description, custom_path=None):
     """Executes a specific script inside its directory"""
@@ -65,14 +66,14 @@ def select_paths():
     """Allows the user to select multiple target paths"""
     paths = {}
     print("\n[?] Select the paths you want to process:")
-    if input("    - Include Desktop? (y/n): ").lower() == 'y':
+    if input("    - Include Desktop? (y/n): ").strip().lower() == 'y':
         paths["desktop"] = os.path.join(os.path.expanduser('~'), 'Desktop')
-    if input("    - Include Documents? (y/n): ").lower() == 'y':
+    if input("    - Include Documents? (y/n): ").strip().lower() == 'y':
         paths["documents"] = os.path.join(os.path.expanduser('~'), 'Documents')
-    if input("    - Include Downloads? (y/n): ").lower() == 'y':
+    if input("    - Include Downloads? (y/n): ").strip().lower() == 'y':
         paths["downloads"] = os.path.join(os.path.expanduser('~'), 'Downloads')
     
-    if input("\n[?] Would you like to add a CUSTOM folder path manually? (y/n): ").lower() == 'y':
+    if input("\n[?] Would you like to add a CUSTOM folder path manually? (y/n): ").strip().lower() == 'y':
         custom = input("    Please enter the FULL path to the folder: ").strip()
         if os.path.isdir(custom):
             paths["custom_folder"] = custom
@@ -81,62 +82,136 @@ def select_paths():
             
     return paths
 
-def main():
-    os.system('cls' if os.name == 'nt' else 'clear')
-    print("╔══════════════════════════════════════════════════════════╗")
-    print("║             KIRO AI AGENT - SMART LAUNCHER               ║")
-    print("║                Project Management Core                   ║")
-    print("╚══════════════════════════════════════════════════════════╝")
-    print("\n1. Full System Processing (Text & Images)")
-    print("2. Text Files Only")
-    print("3. Images Only")
-    print("4. Exit")
+def execute_pipeline(mode_choice, target_paths):
+    """Executes the processing pipeline for the given mode and paths"""
+    start_time = time.time()
     
-    mode_choice = input("\nPlease select processing mode [1-4]: ")
+    # Embedding & Clustering (Collect data from all paths)
+    for name, path in target_paths.items():
+        print(f"\n{'='*50}")
+        print(f"[*] Processing: {name.upper()} ({path})")
+        print(f"{'='*50}")
+        
+        if mode_choice == '1': # Full System
+            process_text_collection(path)
+            process_images_collection(path)
+        elif mode_choice == '2': # Text Only
+            process_text_collection(path)
+        elif mode_choice == '3': # Images Only
+            process_images_collection(path)
     
-    if mode_choice == '4':
-        print("Goodbye!")
-        return
+    # Organization (Run once globally)
+    print(f"\n{'='*50}")
+    print(f"[*] FINAL STEP: Organizing Files into Folders")
+    print(f"{'='*50}")
+    if mode_choice in ['1', '2']:
+        run_script("creat folders for flie_text  and name", "main_converter.py", "Final Text Organization")
+    if mode_choice in ['1', '3']:
+        run_script("creat folders for image and name", "main_image_converter.py", "Final Image Organization")
 
-    if mode_choice in ['1', '2', '3']:
-        # Phase 2: Selection of Paths
+    elapsed = time.time() - start_time
+    print(f"\n{'-'*50}")
+    print(f"Total time elapsed: {elapsed:.2f} seconds")
+    print(f"{'-'*50}")
+
+def interactive_mode():
+    """Runs the interactive terminal menu"""
+    while True:
+        os.system('cls' if os.name == 'nt' else 'clear')
+        print("╔══════════════════════════════════════════════════════════╗")
+        print("║             KIRO AI AGENT - SMART LAUNCHER               ║")
+        print("║                Project Management Core                   ║")
+        print("╚══════════════════════════════════════════════════════════╝")
+        print("\n1. Full System Processing (Text & Images)")
+        print("2. Text Files Only")
+        print("3. Images Only")
+        print("4. Exit")
+        
+        mode_choice = input("\nPlease select processing mode [1-4]: ").strip()
+        
+        if mode_choice == '4':
+            print("\nGoodbye!")
+            break
+        
+        if mode_choice not in ['1', '2', '3']:
+            print("\n[!] Invalid choice. Please select 1, 2, 3, or 4.")
+            time.sleep(2)
+            continue
+
+        # Selection of Paths
         target_paths = select_paths()
         
         if not target_paths:
             print("\n[!] No valid paths selected. Returning to menu...")
             time.sleep(2)
-            return main()
-            
-        # Phase 2: Execution
-        start_time = time.time()
+            continue
         
-        # 2a. Embedding & Clustering (Collect data from all paths)
-        for name, path in target_paths.items():
-            print(f"\n{'='*50}")
-            print(f"[*] Processing: {name.upper()} ({path})")
-            print(f"{'='*50}")
-            
-            if mode_choice == '1': # Full System
-                process_text_collection(path)
-                process_images_collection(path)
-            elif mode_choice == '2': # Text Only
-                process_text_collection(path)
-            elif mode_choice == '3': # Images Only
-                process_images_collection(path)
+        # Execute
+        execute_pipeline(mode_choice, target_paths)
         
-        # 2b. Organization (Run once globally)
-        print(f"\n{'='*50}")
-        print(f"[*] FINAL STEP: Organizing Files into Folders")
-        print(f"{'='*50}")
-        if mode_choice in ['1', '2']:
-            run_script("creat folders for flie_text  and name", "main_converter.py", "Final Text Organization")
-        if mode_choice in ['1', '3']:
-            run_script("creat folders for image and name", "main_image_converter.py", "Final Image Organization")
+        input("\nPress Enter to return to menu...")
 
-    print(f"\n{'-'*50}")
-    print(f"Total time elapsed: {time.time() - start_time:.2f} seconds")
-    print(f"{'-'*50}")
-    input("\nPress Enter to exit...")
+def cli_mode(args):
+    """Runs in non-interactive CLI mode using command-line arguments"""
+    target_paths = {}
+    
+    # Collect paths from flags
+    if args.desktop:
+        target_paths["desktop"] = os.path.join(os.path.expanduser('~'), 'Desktop')
+    if args.documents:
+        target_paths["documents"] = os.path.join(os.path.expanduser('~'), 'Documents')
+    if args.downloads:
+        target_paths["downloads"] = os.path.join(os.path.expanduser('~'), 'Downloads')
+    if args.path:
+        for i, p in enumerate(args.path):
+            if os.path.isdir(p):
+                target_paths[f"custom_{i+1}"] = p
+            else:
+                print(f"[!] Invalid path skipped: {p}")
+
+    if not target_paths:
+        print("[!] Error: No valid paths specified.")
+        print("    Use --desktop, --documents, --downloads, or --path <folder>")
+        sys.exit(1)
+
+    mode_map = {'all': '1', 'text': '2', 'images': '3'}
+    mode_choice = mode_map[args.mode]
+    
+    print(f"\n[*] Mode: {args.mode.upper()}")
+    print(f"[*] Paths: {', '.join(target_paths.values())}")
+    
+    execute_pipeline(mode_choice, target_paths)
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="KIRO AI AGENT - Smart File Organizer",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  python run_project.py                              # Interactive mode
+  python run_project.py --mode text --desktop        # Process text on Desktop
+  python run_project.py --mode all --downloads       # Full processing on Downloads
+  python run_project.py --mode images --path "C:\\MyFolder"  # Images in custom folder
+        """
+    )
+    parser.add_argument('--mode', choices=['all', 'text', 'images'],
+                        help='Processing mode: all, text, or images')
+    parser.add_argument('--desktop', action='store_true',
+                        help='Include Desktop folder')
+    parser.add_argument('--documents', action='store_true',
+                        help='Include Documents folder')
+    parser.add_argument('--downloads', action='store_true',
+                        help='Include Downloads folder')
+    parser.add_argument('--path', action='append', metavar='FOLDER',
+                        help='Custom folder path (can be used multiple times)')
+    
+    args = parser.parse_args()
+    
+    # If --mode is provided, run in CLI mode; otherwise interactive
+    if args.mode:
+        cli_mode(args)
+    else:
+        interactive_mode()
 
 if __name__ == "__main__":
     main()

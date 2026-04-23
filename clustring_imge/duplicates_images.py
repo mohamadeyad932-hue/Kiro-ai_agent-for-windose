@@ -1,8 +1,8 @@
 """
-قاموس الصور المكررة — توليد تلقائي
-كل عنصر: اسم الملف بدون امتداد → الامتداد
+Duplicate images dictionary - auto generated
+Each entry: filename without extension -> extension
 """
 
-# إجمالي المكررات: 0 صورة
+# Total duplicates: 0 images
 duplicates = {
 }

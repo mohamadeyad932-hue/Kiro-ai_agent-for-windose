@@ -1,38 +1,49 @@
 """
-Similar files grouped into sets for: documents
-Automatically generated based on BERT embeddings clustering
+File groups: documents
 """
 
-# Set contains 1 highly similar files
 documents_group_1 = {
-    r"C:\Users\eyad\Documents\cmputer vision.docx",
+    "C:\\Users\\eyad\\Documents\\009.txt",
+    "C:\\Users\\eyad\\Documents\\006.txt",
+    "C:\\Users\\eyad\\Documents\\016.txt",
+    "C:\\Users\\eyad\\Documents\\017.txt",
+    "C:\\Users\\eyad\\Documents\\012.txt",
+    "C:\\Users\\eyad\\Documents\\013.txt",
+    "C:\\Users\\eyad\\Documents\\007.txt",
+    "C:\\Users\\eyad\\Documents\\014.txt",
+    "C:\\Users\\eyad\\Documents\\018.txt",
+    "C:\\Users\\eyad\\Documents\\010.txt",
+    "C:\\Users\\eyad\\Documents\\005.txt",
+    "C:\\Users\\eyad\\Documents\\008.txt",
+    "C:\\Users\\eyad\\Documents\\004.txt",
+    "C:\\Users\\eyad\\Documents\\001.txt",
+    "C:\\Users\\eyad\\Documents\\002.txt",
+    "C:\\Users\\eyad\\Documents\\011.txt",
+    "C:\\Users\\eyad\\Documents\\003.txt",
+    "C:\\Users\\eyad\\Documents\\020.txt",
+    "C:\\Users\\eyad\\Documents\\015.txt",
 }
 
-# Set contains 1 highly similar files
 documents_group_2 = {
-    r"C:\Users\eyad\Documents\المطلوب.docx",
-}
-
-# Set contains 4 highly similar files
-documents_group_3 = {
-    r"C:\Users\eyad\Documents\تقرير عن مشروع مادة خوارزميات البحث.docx",
-    r"C:\Users\eyad\Documents\تقرير عن erp.docx",
-    r"C:\Users\eyad\Documents\تقرير عن مساعد ERP.pdf",
-    r"C:\Users\eyad\Documents\تقرير عن erp - for merge.docx",
-}
-
-# Set contains 2 highly similar files
-documents_group_4 = {
-    r"C:\Users\eyad\Documents\تقرير عن مشروع الأنظمة الخبيرة.docx",
-    r"C:\Users\eyad\Documents\تقرير عن مشروع مادة خوارزميات البحث الذكية.docx",
-}
-
-# Set contains 1 highly similar files
-documents_group_5 = {
-    r"C:\Users\eyad\Documents\خطوات عمل نموذج  SBERT لتحويل النص الى vector.docx",
-}
-
-# Set contains 1 highly similar files
-documents_group_6 = {
-    r"C:\Users\eyad\Documents\كيف CLIP يحول الصورة لـ Vector.docx",
+    "C:\\Users\\eyad\\Documents\\0031.txt",
+    "C:\\Users\\eyad\\Documents\\0025.txt",
+    "C:\\Users\\eyad\\Documents\\0026.txt",
+    "C:\\Users\\eyad\\Documents\\0022.txt",
+    "C:\\Users\\eyad\\Documents\\0038.txt",
+    "C:\\Users\\eyad\\Documents\\0029.txt",
+    "C:\\Users\\eyad\\Documents\\0033.txt",
+    "C:\\Users\\eyad\\Documents\\0021.txt",
+    "C:\\Users\\eyad\\Documents\\0027.txt",
+    "C:\\Users\\eyad\\Documents\\0040.txt",
+    "C:\\Users\\eyad\\Documents\\0028.txt",
+    "C:\\Users\\eyad\\Documents\\0032.txt",
+    "C:\\Users\\eyad\\Documents\\0024.txt",
+    "C:\\Users\\eyad\\Documents\\0023.txt",
+    "C:\\Users\\eyad\\Documents\\0035.txt",
+    "C:\\Users\\eyad\\Documents\\0030.txt",
+    "C:\\Users\\eyad\\Documents\\0034.txt",
+    "C:\\Users\\eyad\\Documents\\0036.txt",
+    "C:\\Users\\eyad\\Documents\\0037.txt",
+    "C:\\Users\\eyad\\Documents\\019.txt",
+    "C:\\Users\\eyad\\Documents\\0039.txt",
 }
