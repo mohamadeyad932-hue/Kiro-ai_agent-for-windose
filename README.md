@@ -1,84 +1,60 @@
-# Kiro: Intelligent Windows File Organizer Agent 🤖📂
+# Kiro AI: The Intelligent Autonomous File Agent 🤖📂
 
 [![Python](https://img.shields.io/badge/Python-3.9%2B-blue)](https://www.python.org/)
-[![AI Powered](https://img.shields.io/badge/AI-Powered-green)]()
-[![Status](https://img.shields.io/badge/Status-Prototype-orange)]()
-
-> **Kiro** is not just a file sorter; it's a context-aware intelligent agent that lives in your Windows background, understanding your documents, images, and audio files to eliminate digital clutter automatically.
-
----
-
-## 📖 Overview
-
-In the modern digital workspace, "Digital Clutter" is a productivity killer. Traditional organizers rely on file extensions (.pdf, .jpg), which is primitive. **Kiro** leverages **Large Language Models (LLMs)** and **Computer Vision** to understand the *semantic content* of your files.
-
-Whether it's a financial report, a university lecture, or a personal photo, Kiro analyzes the content and moves it to the right place—or creates a new category for it—without you lifting a finger.
-
-## 🚀 Key Features
-
-* **⚡ Real-Time Monitoring:** Continuously watches Desktop, Downloads, and Documents using `watchdog` events.
-* **🧠 Semantic Understanding:**
-    * **Text:** Uses **BERT** models to understand the context of PDFs and Word docs.
-    * **Audio:** Transcribes audio (MP3/WAV) using **OpenAI Whisper** to classify content (e.g., "Lecture" vs. "Music").
-    * **Vision:** Analyzes image content using Vision Models to tag and sort photos based on visual elements.
-* **✨ Magical Clustering:** Utilizes **K-Means clustering** to group uncategorized files based on similarity.
-* **🛡️ Smart Deduplication:**
-    * Uses **Perceptual Hashing** for images (detects duplicates even if resized).
-    * Uses **Cosine Similarity** for text documents to find content overlaps.
-* **🖥️ User Control:** Simple GUI to toggle the agent on/off.
+[![UI/UX](https://img.shields.io/badge/UI-PyQt6-violet)]()
+[![AI Powered](https://img.shields.io/badge/AI-SBERT%20%2B%20BLIP-green)]()
+[![Status](https://img.shields.io/badge/Status-Beta-orange)]()
+[![License](https://img.shields.io/badge/License-MIT-lightgrey)]() > **Kiro AI** is an advanced, context-aware autonomous agent designed to eliminate digital chaos. Unlike traditional organizers that rely on extensions, Kiro understands your documents' meaning and your images' visual content using state-of-the-art **Deep Learning** models.
 
 ---
 
-## 🛠️ Technical Architecture & Tech Stack
+## 📸 Sneak Peek
+![Kiro AI Interface](https://via.placeholder.com/800x450.png?text=Add+a+Screenshot+or+GIF+of+Kiro+AI+Here)
 
-The project is built using a modular pipeline approach:
+---
 
-| Component | Technology / Library | Description |
+## 🌟 What's New? (Recent Updates)
+* **✨ Modern PyQt6 Interface:** A premium, glassmorphism-inspired UI with smooth animations and dark mode support.
+* **📊 Live Neural Dashboard:** Real-time visualization of your file ecosystem, showing exactly how many files were organized and where they moved.
+* **🧠 Advanced Clustering Engine:** Switched to **Agglomerative Clustering** with **PCA** dimensionality reduction and **Silhouette Score** for automated, high-precision threshold detection.
+* **🌐 Fully Bilingual:** Native support for Arabic and English with seamless RTL/LTR switching.
+
+---
+
+## 🚀 Core Features
+* **🔍 Semantic Document Analysis:** Uses **SBERT (Sentence-BERT)** to read and understand the actual content of PDFs, Word docs, and text files.
+* **🖼️ Visual Intelligence:** Leverages the **BLIP** model to "see" images, generate captions, and group them by semantic topics.
+* **🏷️ Intelligent Naming:** Automatically generates human-readable folder names based on the most dominant semantic themes found in the clusters.
+* **⚡ Real-Time Pipeline:** High-performance execution via `QProcess` with live terminal feedback.
+* **🛡️ Verification Logic:** Live file-system verification to ensure statistics match the actual files on your disk.
+
+---
+
+## 🛠️ Technical Architecture
+
+| Component | Technology | Role |
 | :--- | :--- | :--- |
-| **Core Language** | Python 🐍 | The backbone of the agent. |
-| **File Operations** | `watchdog`, `shutil` | Event-driven file system monitoring and manipulation. |
-| **NLP & Embeddings** | `sentence-transformers` (BERT) | Converting text to vector embeddings for understanding context. |
-| **Audio Processing** | `openai-whisper` | State-of-the-art speech-to-text transcription. |
-| **Clustering** | `scikit-learn` (K-Means) | Unsupervised learning to group similar documents. |
-| **Image Processing** | `imagehash`, `GPT-4V` (Concept) | Perceptual hashing for deduplication and VLM for understanding. |
-| **Text Extraction** | `pdfplumber`, `python-docx` | Extracting raw text from various document formats. |
-
-### How It Works (The Pipeline)
-1.  **Monitor:** The agent detects a `FileCreated` event in target directories.
-2.  **Extract:** Depending on file type, text is extracted or audio is transcribed.
-3.  **Embed:** The content is passed through a Transformer model to generate a numerical vector (Embedding).
-4.  **Classify/Cluster:** The vector is compared against existing cluster centers (using K-Means) to determine the category.
-5.  **Action:** The file is moved to the appropriate folder. If it's a duplicate (checked via Hashing), it is flagged or removed.
+| **GUI Framework** | PyQt6 | Premium user interface and navigation. |
+| **NLP Engine** | SBERT (sbert_high_res) | Generating high-dimensional text embeddings. |
+| **Vision Engine** | BLIP Model | Image captioning and visual semantic analysis. |
+| **Clustering** | Scikit-learn | Grouping files without predefined categories. |
+| **Auto-Threshold** | Scipy (Dendrogram) | Finding the mathematical "sweet spot" for clustering. |
+| **Data Bridge** | JSON Metadata | Real-time synchronization between AI backend and UI. |
 
 ---
 
-## 📊 Comparison: Kiro vs. Traditional Assistants
+## 👨‍💻 The Team
+Developed as a breakthrough project at **Damascus Training Centre (DTC)** - AI Department.
 
-| Feature | Kiro 🤖 | Siri / Cortana 🗣️ | Traditional Scripts 📜 |
-| :--- | :---: | :---: | :---: |
-| **Focus** | File Organization & Management | General Voice Commands | Basic Extension Sorting |
-| **Content Awareness** | ✅ Deep (Semantic) | ❌ None | ❌ None |
-| **Automation** | ✅ Proactive (Background) | ❌ Reactive (Waiting for command) | ✅ Reactive |
-| **Image Understanding** | ✅ Yes | ❌ No | ❌ No |
+* **Lead Developers:** Iyad Muhammad, Wasim Mahmoud, Lana Al-Sheikh.
+* **Academic Supervisor:** Eng. Nour Al-Hakim.
+* **Department Head:** Eng. Wasim Al-Madi.
 
 ---
 
-## 👨‍💻 Team
+## 🔧 Installation & Setup
 
-This project was developed as a graduation project at **Damascus Training Centre (DTC)** - AI Department.
-
-* **Developers:**
-    * Iyad Muhammad
-    * Wasim Mahmoud
-    * Lana Al-Sheikh
-* **Supervisor:** Eng. Nour Al-Hakim
-* **Head of Department:** Eng. Wasim Al-Madi
-
----
-
-## 🔮 Future Roadmap
-* [ ] Integration with Cloud Services (Google Drive / OneDrive).
-* [ ] Cross-platform support (Linux/macOS).
-* [ ] Advanced dashboard for viewing file statistics.
-
----
+**1. Clone the Repo:**
+```bash
+git clone [https://github.com/mohamadeyad932-hue/Kiro-ai_agent-for-windows.git](https://github.com/mohamadeyad932-hue/Kiro-ai_agent-for-windows.git)
+cd Kiro-ai_agent
