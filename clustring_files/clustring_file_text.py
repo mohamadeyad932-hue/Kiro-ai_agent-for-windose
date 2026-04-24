@@ -5,7 +5,15 @@ import importlib
 from collections import defaultdict
 
 # Force UTF-8 encoding for standard output to avoid garbled Arabic in terminal
-sys.stdout.reconfigure(encoding='utf-8')
+# Force UTF-8 encoding safely
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+elif sys.stdout.encoding != 'UTF-8':
+    try:
+        import codecs
+        sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
+    except:
+        pass
 
 try:
     from sklearn.cluster import AgglomerativeClustering

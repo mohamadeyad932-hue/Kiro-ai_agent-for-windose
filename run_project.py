@@ -4,13 +4,24 @@ import sys
 import time
 import argparse
 
+# Force UTF-8 encoding safely
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+elif sys.stdout.encoding != 'UTF-8':
+    try:
+        import codecs
+        sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
+    except:
+        pass
+
+
 def run_script(dir_name, script_name, description, custom_path=None):
     """Executes a specific script inside its directory"""
     script_path = os.path.join(dir_name, script_name)
     
-    print(f"\n{'─'*50}")
+    print(f"\n{'-'*50}")
     print(f"[*] Executing: {description}")
-    print(f"{'─'*50}")
+    print(f"{'-'*50}")
     
     if not os.path.exists(script_path):
         print(f"[!] Error: File not found at: {script_path}")
@@ -18,16 +29,25 @@ def run_script(dir_name, script_name, description, custom_path=None):
     
     try:
         # Prepare command
-        command = [sys.executable, script_name]
+        command = [sys.executable, "-u", script_name]
         if custom_path:
             command.append(custom_path) # Pass custom path as argument
             print(f"[*] Targeting Custom Path: {custom_path}")
 
         process = subprocess.Popen(command, 
                                    cwd=dir_name,
-                                   stdout=sys.stdout, 
-                                   stderr=sys.stderr,
-                                   text=True)
+                                   stdout=subprocess.PIPE, 
+                                   stderr=subprocess.STDOUT,
+                                   text=True,
+                                   encoding='utf-8',
+                                   errors='replace')
+        
+        # Read output line by line and print it to our stdout
+        if process.stdout:
+            for line in process.stdout:
+                sys.stdout.write(line)
+                sys.stdout.flush()
+        
         process.wait()
         
         if process.returncode == 0:
@@ -105,7 +125,7 @@ def execute_pipeline(mode_choice, target_paths):
     print(f"[*] FINAL STEP: Organizing Files into Folders")
     print(f"{'='*50}")
     if mode_choice in ['1', '2']:
-        run_script("creat folders for flie_text  and name", "main_converter.py", "Final Text Organization")
+        run_script("creat folders for flie_text  and name", "semantic_folder_creator.py", "Final Text Organization")
     if mode_choice in ['1', '3']:
         run_script("creat folders for image and name", "main_image_converter.py", "Final Image Organization")
 
@@ -114,14 +134,26 @@ def execute_pipeline(mode_choice, target_paths):
     print(f"Total time elapsed: {elapsed:.2f} seconds")
     print(f"{'-'*50}")
 
+    # حفظ الوقت الكلي في ملف النتائج ليظهر بدقة في الداشبورد
+    import json
+    json_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "created_folders.json")
+    if os.path.exists(json_path):
+        try:
+            with open(json_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            data["total_processing_time"] = elapsed
+            with open(json_path, 'w', encoding='utf-8') as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+        except: pass
+
 def interactive_mode():
     """Runs the interactive terminal menu"""
     while True:
         os.system('cls' if os.name == 'nt' else 'clear')
-        print("╔══════════════════════════════════════════════════════════╗")
-        print("║             KIRO AI AGENT - SMART LAUNCHER               ║")
-        print("║                Project Management Core                   ║")
-        print("╚══════════════════════════════════════════════════════════╝")
+        print("============================================================")
+        print("             KIRO AI AGENT - SMART LAUNCHER               ")
+        print("                Project Management Core                   ")
+        print("============================================================")
         print("\n1. Full System Processing (Text & Images)")
         print("2. Text Files Only")
         print("3. Images Only")

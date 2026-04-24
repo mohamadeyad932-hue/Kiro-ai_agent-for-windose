@@ -14,8 +14,8 @@ def download_and_setup():
     os.makedirs(target_dir, exist_ok=True)
 
     print("=" * 50)
-    print(f"🚀 بدء تجهيز محرك الصور كيرو (Kiro Image Engine)")
-    print(f"📁 مسار الحفظ المحلي: {target_dir}")
+    print(f" بدء تجهيز محرك الصور كيرو (Kiro Image Engine)")
+    print(f" مسار الحفظ المحلي: {target_dir}")
     print("=" * 50)
 
     # اسم الموديل العالمي من OpenAI
@@ -23,25 +23,25 @@ def download_and_setup():
 
     try:
         # 2. تحميل الموديل والبروسيسور من الإنترنت
-        print(f"📥 جاري الاتصال بالسيرفر لتحميل {model_name}...")
-        print("💡 ملاحظة: الحجم حوالي 600MB، يرجى عدم إغلاق الواجهة...")
+        print(f" جاري الاتصال بالسيرفر لتحميل {model_name}...")
+        print(" ملاحظة: الحجم حوالي 600MB، يرجى عدم إغلاق الواجهة...")
 
         model = CLIPModel.from_pretrained(model_name)
         processor = CLIPProcessor.from_pretrained(model_name)
 
         # 3. حفظ الملفات في المجلد الحالي لتعمل بدون إنترنت لاحقاً
-        print("💾 جاري حفظ الأوزان والإعدادات محلياً...")
+        print(" جاري حفظ الأوزان والإعدادات محلياً...")
         model.save_pretrained(target_dir)
         processor.save_pretrained(target_dir)
 
         print("=" * 50)
-        print("✅ تم بنجاح! الموديل جاهز الآن للعمل Offline.")
-        print(f"📂 تأكدي من وجود ملف 'pytorch_model.bin' داخل المجلد الآن.")
+        print(" تم بنجاح! الموديل جاهز الآن للعمل Offline.")
+        print(f" تأكدي من وجود ملف 'pytorch_model.bin' داخل المجلد الآن.")
         print("=" * 50)
 
     except Exception as e:
-        print(f"❌ حدث خطأ غير متوقع: {e}")
-        print("⚠️ تأكدي من اتصال الإنترنت ومن تفعيل البيئة الافتراضية (venv).")
+        print(f" حدث خطأ غير متوقع: {e}")
+        print(" تأكدي من اتصال الإنترنت ومن تفعيل البيئة الافتراضية (venv).")
 
 
 if __name__ == "__main__":

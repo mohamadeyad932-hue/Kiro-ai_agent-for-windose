@@ -166,21 +166,18 @@ STRINGS = {
     # ─── شاشة المعالجة ───
  
     # رسائل المراحل
-    "phase1_title": {"ar": "Kiro يمسح القطاعات التخزينية...", "en": "Kiro scanning storage sectors..."},
-    "phase1_sub": {"ar": "يبحث عن البيانات غير المهيكلة في المسارات المحددة", "en": "Looking for unstructured data in specified paths"},
+    "phase1_title": {"ar": "جاري العمل...", "en": "Working..."},
+    "phase1_sub": {"ar": "يتم الآن تحليل ومعالجة البيانات عبر المحرك العصبوني", "en": "Analyzing and processing data via neural engine"},
     "phase2_title": {"ar": "Kiro يقوم بالتحليل العصبوني...", "en": "Kiro performing neural analysis..."},
     "phase2_sub": {"ar": "نماذج الذكاء الاصطناعي تقرأ وتفهم المحتوى", "en": "AI models reading and understanding content"},
     "phase3_title": {"ar": "Kiro يهيكل البيانات...", "en": "Kiro structuring data..."},
     "phase3_sub": {"ar": "توليد المجلدات الذكية ونقل الكيانات إليها", "en": "Generating smart folders and moving entities"},
-    "phase4_title": {"ar": "اكتملت الدورة بنجاح! ⚡", "en": "Cycle completed successfully! ⚡"},
+    "phase4_title": {"ar": "اكتملت الدورة بنجاح", "en": "Cycle completed successfully"},
     "phase4_sub": {"ar": "النظام الآن مهيأ ومستقر", "en": "System is now configured and stable"},
 
     # ─── شاشة لوحة التحكم ───
-    "dash_hero_title": {"ar": "تمت الهيكلة بنجاح. النظام مستقر.", "en": "Structuring successful. System stable."},
-    "dash_hero_desc": {
-        "ar": "الذكاء الاصطناعي الخاص بك عالج 287 كيان بيانات ورتبها في مسارات منطقية جديدة.",
-        "en": "Your AI processed 287 data entities and organized them into new logical paths.",
-    },
+    "dash_hero_title": {"ar": "تم تنظيم بياناتك بنجاح", "en": "Data Organized Successfully"},
+    "dash_hero_desc": {"ar": "قام Kiro AI بتحليل بياناتك وتصنيفها في مسارات عصبونية ذكية.", "en": "Kiro AI analyzed your data and classified it into smart neural pathways."},
     "dash_stat1_label": {"ar": "كيانات معالجة", "en": "Processed Entities"},
     "dash_stat1_value": {"ar": "287", "en": "287"},
     "dash_stat1_sub": {"ar": "موزعة في 3 عقد رئيسية", "en": "Distributed in 3 main nodes"},
@@ -194,12 +191,9 @@ STRINGS = {
     "dash_stat4_value": {"ar": "115", "en": "115"},
     "dash_stat4_sub": {"ar": "تم التعرف على عناصرها", "en": "Elements identified"},
     "dash_folders_title": {"ar": "العقد التنظيمية (المجلدات الذكية)", "en": "Smart Folders (Organization Nodes)"},
-    "dash_folders_count": {"ar": "5 مجموعات", "en": "5 Groups"},
+    "dash_files_suffix": {"ar": "ملفات", "en": "files"},
+    "dash_folders_count": {"ar": "مجلدات", "en": "Folders"},
     "dash_folder1": {"ar": "مستندات قانونية وإدارية", "en": "Legal & Administrative Docs"},
-    "dash_folder1_count": {"ar": "45 ملف", "en": "45 files"},
-    "dash_folder2": {"ar": "سجلات وتقارير العمل", "en": "Work Records & Reports"},
-    "dash_folder2_count": {"ar": "38 ملف", "en": "38 files"},
-    "dash_folder3": {"ar": "أرشيف مرئي (عائلة وأحداث)", "en": "Visual Archive (Family & Events)"},
     "dash_folder3_count": {"ar": "82 ملف", "en": "82 files"},
     "dash_new_cycle": {"ar": "← بدء دورة معالجة جديدة", "en": "Start New Processing Cycle →"},
 

@@ -1,6 +1,18 @@
 import os
 import shutil
+import sys
 import re
+
+# Force UTF-8 encoding safely
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+elif sys.stdout.encoding != 'UTF-8':
+    try:
+        import codecs
+        sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
+    except:
+        pass
+
 import numpy as np
 import importlib.util
 from sklearn.feature_extraction.text import CountVectorizer
@@ -136,7 +148,7 @@ def get_semantic_label(texts):
     candidates = extract_candidates(texts)
 
     if len(candidates) == 0:
-        return "مجلد_عام"
+        return "new folder"
 
     # --- الخطوات المشتركة ---
     text_embeddings = sbert_model.encode(texts)
@@ -153,7 +165,7 @@ def get_semantic_label(texts):
         best_bigram = max(bigrams, key=lambda x: x[1])
         if best_bigram[1] > 0.3:
             clean_name = best_bigram[0].replace(" ", "_")
-            print(f"    🏷  اسم المجلد (bigram): {clean_name}")
+            print(f" اسم المجلد (bigram): {clean_name}")
             return clean_name
 
     # --- [طبقة 1] ادمج أفضل 3 Unigrams ---
@@ -162,26 +174,49 @@ def get_semantic_label(texts):
     top_words = [w for w, _ in unigrams_sorted[:top_n]]
     label = "_".join(top_words)
 
-    print(f"    🏷  اسم المجلد (unigrams): {label}")
+    print(f"     اسم المجلد (unigrams): {label}")
     return label
 
 
 # ==========================================
 #        معالجة القواميس وإنشاء المجلدات
 # ==========================================
+def save_metadata(group_name, folder_path, files_count):
+    """حفظ معلومات المجلد المنشأ في ملف JSON للواجهة"""
+    import json
+    json_path = os.path.join(BASE_DIR, "created_folders.json")
+    data = {"created_folders": []}
+    
+    if os.path.exists(json_path):
+        try:
+            with open(json_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+        except: pass
+            
+    data["created_folders"].append({
+        "group_name": group_name,
+        "folder_path": folder_path,
+        "files_count": files_count,
+        "type": "text",
+        "timestamp": time.time() if 'time' in globals() else 0
+    })
+    
+    with open(json_path, 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
 def process_dictionaries(clustering_dir):
     """المرور على ملفات القواميس وتحويل المجموعات لمجلدات فعلية"""
     if not os.path.exists(clustering_dir):
-        print(f"❌ مسار القواميس غير موجود: {clustering_dir}")
+        print(f" مسار القواميس غير موجود: {clustering_dir}")
         return
 
-    print("\n🔍 جاري البحث في القواميس...")
+    print("\n جاري البحث في القواميس...")
     for filename in os.listdir(clustering_dir):
         if not filename.endswith(".py"):
             continue
 
         file_path = os.path.join(clustering_dir, filename)
-        print(f"\n{'='*50}\n📂 معالجة القاموس: {filename}\n{'='*50}")
+        print(f"\n{'='*50}\n معالجة القاموس: {filename}\n{'='*50}")
 
         spec = importlib.util.spec_from_file_location("module.name", file_path)
         foo = importlib.util.module_from_spec(spec)
@@ -227,7 +262,7 @@ def process_dictionaries(clustering_dir):
                 target_folder = f"{original_target}_{counter}"
                 counter += 1
 
-            print(f"📁 إنشاء المجلد: {target_folder}")
+            print(f" إنشاء المجلد: {target_folder}")
             os.makedirs(target_folder, exist_ok=True)
 
             for f in valid_files:
@@ -235,11 +270,15 @@ def process_dictionaries(clustering_dir):
                 dest_path = os.path.join(target_folder, fname)
                 try:
                     shutil.move(f, dest_path)
-                    print(f"  ✅ نُقل: {fname}")
+                    print(f"  نُقل: {fname}")
                 except Exception as e:
-                    print(f"  ❌ فشل في نقل {fname}: {e}")
+                    print(f"  فشل في نقل {fname}: {e}")
+            
+            # حفظ المعلومات للداشبورد
+            save_metadata(label, target_folder, len(valid_files))
 
 
 if __name__ == '__main__':
+    import time
     process_dictionaries(CLUSTERING_DIR)
-    print("\n🎉 تم الانتهاء من جميع القواميس!")
+    print("\n تم الانتهاء من جميع القواميس!")

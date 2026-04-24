@@ -20,7 +20,11 @@ sys.stdout.reconfigure(encoding='utf-8')
 # ─────────────── الإعدادات ───────────────
 
 EXTENSIONS = {'.txt', '.pdf', '.docx'}
-MODEL_PATH = r"c:\Users\eyad\Desktop\Kiro-ai_agent-for-windose\models\sbert_high_res"
+
+# الحصول على مسار المجلد الرئيسي للمشروع تلقائياً
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+MODEL_PATH = os.path.join(BASE_DIR, "models", "sbert_high_res")
+
 HOME       = os.path.expanduser('~')
 OUTPUT_DIR = os.path.dirname(os.path.abspath(__file__))
 
