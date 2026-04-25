@@ -1,160 +1,315 @@
 """
-clustring_image_captions.py
-يقوم بتجميع الصور المتشابهة بناءً على بصمات أوصافها النصية (SBERT vectors)
-باستخدام خوارزمية Agglomerative Clustering.
-يتبع نفس نمط clustring/clustring_file_text.py
+images_pipeline.py
+الخط الكامل لمعالجة الصور في مشروع Kiro
+المرحلة 1: كشف المكررات ونقلها (Perceptual Hashing)
+المرحلة 2: تجميع الصور المتبقية (CLIP + Clustering)
 """
 
 import os
 import sys
+import shutil
 import numpy as np
+from itertools import combinations
 from collections import defaultdict
 
-# Force UTF-8 encoding for standard output
-sys.stdout.reconfigure(encoding='utf-8')
+sys.stdout.reconfigure(encoding="utf-8")
+
+try:
+    import imagehash
+    from PIL import Image
+except ImportError:
+    print("pip install imagehash Pillow")
+    sys.exit(1)
 
 try:
     from sklearn.cluster import AgglomerativeClustering
 except ImportError:
-    print("Please ensure libraries are installed:")
     print("pip install scikit-learn numpy")
     sys.exit(1)
 
-# إضافة مسار مجلد imag_plip_p ليتمكن بايثون من استيراد القواميس منه
-PROCESSING_DIR = r"c:\Users\eyad\Desktop\Kiro-ai_agent-for-windose\imag_plip_p"
+# ─────────────── الإعدادات ───────────────
+
+HOME = os.path.expanduser("~")
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROCESSING_DIR = os.path.join(CURRENT_DIR, "..", "Processing image")
 if PROCESSING_DIR not in sys.path:
     sys.path.append(PROCESSING_DIR)
 
-# ─── استيراد قواميس الصور والبصمات ───
+# منطق المسارات المخصصة (Custom Path)
+custom_path = sys.argv[1] if len(sys.argv) > 1 and os.path.isdir(sys.argv[1]) else None
 
-try:
-    from desktop_files import desktop_image_file
-    from desktop_vectors import desktop_image_vectors
-    from desktop_image_to_text import desktop_image_captions
-except ImportError:
-    desktop_image_file = {}; desktop_image_vectors = {}; desktop_image_captions = {}
+if custom_path:
+    FOLDERS = {"custom_folder": custom_path}
+else:
+    FOLDERS = {
+        "desktop": os.path.join(HOME, "Desktop"),
+        "documents": os.path.join(HOME, "Documents"),
+        "downloads": os.path.join(HOME, "Downloads"),
+    }
 
-try:
-    from documents_files import documents_image_file
-    from documents_vectors import documents_image_vectors
-    from documents_image_to_text import documents_image_captions
-except ImportError:
-    documents_image_file = {}; documents_image_vectors = {}; documents_image_captions = {}
+EXTENSIONS = {".png", ".jpg", ".jpeg", ".bmp", ".webp", ".jfif"}
+THRESHOLD = 12
+DUPLICATES_DIR = os.path.join(HOME, "Desktop", "Kiro_Duplicates")
 
-try:
-    from downloads_files import downloads_image_file
-    from downloads_vectors import downloads_image_vectors
-    from downloads_image_to_text import downloads_image_captions
-except ImportError:
-    downloads_image_file = {}; downloads_image_vectors = {}; downloads_image_captions = {}
+def dynamic_import(name):
+    """استيراد الوحدات ديناميكياً لتجنب أخطاء الاستيراد الثابتة"""
+    import importlib
+    try:
+        return importlib.import_module(name)
+    except ImportError:
+        return None
 
 
-def save_cluster_scripts(folder_name, folder_sets):
-    """
-    حفظ مجموعات الصور المتشابهة في سكربت بايثون.
-    """
-    script_name = f"similar_{folder_name}_images.py"
-    output_dir = os.path.dirname(os.path.abspath(__file__))
-    script_path = os.path.join(output_dir, script_name)
+# ═══════════════════════════════════════════════
+# المرحلة 1: كشف المكررات
+# ═══════════════════════════════════════════════
+
+def get_all_images(folders):
+    """جمع كل الصور من المجلدات الثلاثة"""
+    all_images = {}
+    for folder_name, folder_path in folders.items():
+        if not os.path.isdir(folder_path):
+            continue
+        try:
+            with os.scandir(folder_path) as entries:
+                for entry in entries:
+                    if not entry.is_file():
+                        continue
+                    _, ext = os.path.splitext(entry.name)
+                    if ext.lower() in EXTENSIONS:
+                        all_images[entry.path] = entry.name
+        except PermissionError:
+            print(f"  ⚠ لا توجد صلاحية: {folder_path}")
+    return all_images
+
+
+def compute_hashes(all_images):
+    """حساب البصمة الإدراكية لكل صورة"""
+    hashes = {}
+    print(f"\nجاري حساب البصمات لـ {len(all_images)} صورة...")
+    for path in all_images:
+        try:
+            img = Image.open(path).convert("RGB")
+            hashes[path] = imagehash.phash(img)
+        except Exception as e:
+            print(f"  ⚠ خطأ: {os.path.basename(path)} → {e}")
+    return hashes
+
+
+def find_duplicates(hashes):
+    """إيجاد الصور المتشابهة بمقارنة كل الأزواج"""
+    paths = list(hashes.keys())
+    duplicate_groups = []
+
+    for path1, path2 in combinations(paths, 2):
+        distance = hashes[path1] - hashes[path2]
+        if distance <= THRESHOLD:
+            found = False
+            for group in duplicate_groups:
+                if path1 in group or path2 in group:
+                    group.add(path1)
+                    group.add(path2)
+                    found = True
+                    break
+            if not found:
+                duplicate_groups.append({path1, path2})
+
+    return duplicate_groups
+
+
+def save_duplicates_script(duplicate_groups):
+    """حفظ المكررات في قاموس وحد"""
+    script_path = os.path.join(CURRENT_DIR, "duplicates_images.py")
+
+    all_duplicates = {}
+    for group in duplicate_groups:
+        sorted_group = sorted(group)
+        for dup_path in sorted_group[1:]:  # الأول يبقى، الباقي مكررات
+            name, ext = os.path.splitext(os.path.basename(dup_path))
+            all_duplicates[name] = ext.lower()
 
     lines = [
-        f'"""',
-        f'Similar images grouped into sets for: {folder_name}',
-        f'Automatically generated based on BLIP captions + SBERT embeddings clustering',
-        f'"""',
-        ''
+        '"""',
+        "قاموس الصور المكررة — توليد تلقائي",
+        "كل عنصر: اسم الملف بدون امتداد → الامتداد",
+        '"""',
+        "",
+        f"# إجمالي المكررات: {len(all_duplicates)} صورة",
+        "duplicates = {",
     ]
+    for name, ext in all_duplicates.items():
+        lines.append(f'    "{name.replace(chr(34), chr(92)+chr(34))}": "{ext}",')
+    lines.append("}\n")
 
-    for set_name, files_set in folder_sets.items():
-        lines.append(f"# Set contains {len(files_set)} similar images")
-        lines.append(f"{set_name} = {{")
-        for f in files_set:
-            lines.append(f'    r"{f}",')
+    with open(script_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines))
+    print(f"  [+] تم حفظ: duplicates_images.py ({len(all_duplicates)} مكرر)")
+
+
+def move_duplicates(duplicate_groups):
+    """نقل المكررات لمجلد خاص وإرجاع مسارات الصور المنقولة"""
+    moved_paths = set()  # ← مهم: بنرجعها للمرحلة الثانية تتجاهلها
+
+    if not duplicate_groups:
+        print("\n✅ لم يتم العثور على صور مكررة.")
+        return moved_paths
+
+    os.makedirs(DUPLICATES_DIR, exist_ok=True)
+    print(f"\nتم العثور على {len(duplicate_groups)} مجموعة مكررة:")
+    print(f"سيتم نقل المكررات إلى: {DUPLICATES_DIR}\n")
+
+    for i, group in enumerate(duplicate_groups, 1):
+        sorted_group = sorted(group)
+        original = sorted_group[0]
+        duplicates = sorted_group[1:]
+
+        print(f"  المجموعة {i}:")
+        print(f"    ✅ يبقى: {os.path.basename(original)}")
+
+        for dup in duplicates:
+            dest = os.path.join(DUPLICATES_DIR, os.path.basename(dup))
+            if os.path.exists(dest):
+                name, ext = os.path.splitext(os.path.basename(dup))
+                dest = os.path.join(DUPLICATES_DIR, f"{name}_dup{i}{ext}")
+            try:
+                shutil.move(dup, dest)
+                moved_paths.add(dup)  # ← نسجل المسار قبل النقل
+                print(f"    🔁 نُقل: {os.path.basename(dup)}")
+            except Exception as e:
+                print(f"    ⚠ خطأ في النقل: {e}")
+
+    return moved_paths
+
+
+def run_duplicate_detection():
+    """تشغيل المرحلة الأولى كاملة وإرجاع مسارات المكررات المنقولة"""
+    print("=" * 60)
+    print("المرحلة 1: كشف المكررات — مشروع Kiro")
+    print("=" * 60)
+
+    all_images = get_all_images(FOLDERS)
+    if not all_images:
+        print("لم يتم العثور على أي صور.")
+        return set()
+
+    hashes = compute_hashes(all_images)
+    duplicate_groups = find_duplicates(hashes)
+    save_duplicates_script(duplicate_groups)
+    moved_paths = move_duplicates(duplicate_groups)
+
+    remaining = len(all_images) - len(moved_paths)
+    print(f"\n✅ الصور المتبقية بعد إزالة المكررات: {remaining}")
+    return moved_paths
+
+
+# ═══════════════════════════════════════════════
+# المرحلة 2: التجميع
+# ═══════════════════════════════════════════════
+
+def save_image_cluster_scripts(folder_name, folder_groups):
+    """حفظ المجموعات في ملفات .py"""
+    script_path = os.path.join(CURRENT_DIR, f"similar_{folder_name}_images.py")
+
+    lines = ['"""', f"مجموعات الصور المتشابهة: {folder_name}", '"""', ""]
+    saved_groups = 0
+
+    for group_name, files_dict in folder_groups.items():
+        if len(files_dict) < 2:
+            continue
+        lines.append(f"# {len(files_dict)} صور متشابهة")
+        lines.append(f"{group_name} = {{")
+        for name, ext in files_dict.items():
+            lines.append(f'    "{name.replace(chr(34), chr(92)+chr(34))}": "{ext}",')
         lines.append("}\n")
+        saved_groups += 1
 
-    with open(script_path, 'w', encoding='utf-8') as f:
-        f.write('\n'.join(lines))
+    with open(script_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines))
+    print(f"  [+] تم حفظ: similar_{folder_name}_images.py ({saved_groups} مجموعة)")
 
-    print(f"  [+] Saved script: {script_name}")
 
-
-def main():
-    home = os.path.expanduser("~")
-
-    # folder_name, folder_path, files_dict, vectors_dict, captions_dict
-    folders_data = [
-        ("desktop",   os.path.join(home, "Desktop"),   desktop_image_file,   desktop_image_vectors,   desktop_image_captions),
-        ("documents", os.path.join(home, "Documents"), documents_image_file, documents_image_vectors, documents_image_captions),
-        ("downloads", os.path.join(home, "Downloads"), downloads_image_file, downloads_image_vectors, downloads_image_captions),
-    ]
-
-    print("=" * 60)
-    print("بدء عملية تجميع الصور المتشابهة (BLIP + SBERT Clustering)...")
+def run_clustering(moved_paths):
+    """تشغيل المرحلة الثانية — بتتجاهل الصور المنقولة كمكررات"""
+    print("\n" + "=" * 60)
+    print("المرحلة 2: تجميع الصور — مشروع Kiro")
     print("=" * 60)
 
-    for folder_name, folder_path, files_dict, vectors_dict, captions_dict in folders_data:
+    for folder_name, folder_path in FOLDERS.items():
+        # تحميل البيانات ديناميكياً لكل مجلد
+        mod_files = dynamic_import(f"{folder_name}_images_files")
+        mod_vectors = dynamic_import(f"{folder_name}_images_vectors")
+        
+        files_dict = getattr(mod_files, f"{folder_name}_images", {}) if mod_files else {}
+        vectors_dict = getattr(mod_vectors, f"{folder_name}_images_vectors", {}) if mod_vectors else {}
+
         if not files_dict or not vectors_dict:
-            print(f"\n[{folder_name}] لم يتم العثور على بصمات صور. تم التخطي.")
+            print(f"  [!] لم يتم العثور على بصمات لـ {folder_name}، تم التخطي.")
             continue
 
-        print(f"\n[{folder_name}] جاري تحليل بصمات الصور وتجميعها...")
+        print(f"\n[{folder_name}] جاري تحليل البصمات...")
 
-        valid_names = []
+        valid_paths = []
         valid_vectors = []
 
         for name, ext in files_dict.items():
-            if name in vectors_dict:
-                valid_names.append(name)
-                valid_vectors.append(vectors_dict[name])
+            full_path = os.path.normpath(os.path.join(folder_path, name + ext))
 
-        if not valid_names:
-            print(f"  - القواميس فارغة.\n")
+            # ← هون الدمج: تجاهل الصور المنقولة كمكررات + التحقق من الوجود
+            if full_path in moved_paths:
+                continue
+            if not os.path.exists(full_path):
+                print(f"  ⚠ غير موجود، تم تخطيه: {name}{ext}")
+                continue
+            if name not in vectors_dict:
+                continue
+
+            valid_paths.append(full_path)
+            valid_vectors.append(vectors_dict[name])
+
+        if len(valid_paths) < 2:
+            print("  - لا توجد صور كافية للتجميع.")
             continue
 
-        num_images = len(valid_names)
-        folder_clustered_sets = {}
+        print(f"  - عدد الصور الصالحة للتجميع: {len(valid_paths)}")
 
-        if num_images <= 1:
-            clusters = [0]
-        else:
-            clustering = AgglomerativeClustering(
-                n_clusters=None,
-                distance_threshold=4#العتبة المستخدمة في تجميع النصوص
-            )
-            clusters = clustering.fit_predict(np.array(valid_vectors))
+        clustering = AgglomerativeClustering(
+            n_clusters=None,
+            metric="cosine",
+            distance_threshold=0.26,
+            linkage="average",
+        )
+        clusters = clustering.fit_predict(np.array(valid_vectors))
 
         cluster_dict = defaultdict(list)
-        for name, c_id in zip(valid_names, clusters):
-            cluster_dict[c_id].append(name)
+        for path, c_id in zip(valid_paths, clusters):
+            cluster_dict[c_id].append(path)
 
-        # إنشاء أسماء المتغيرات: foldername_image_group_1, foldername_image_group_2 ...
-        group_counter = 1
-        for c_id, names_list in cluster_dict.items():
-            full_paths = []
-            for name in names_list:
-                ext = files_dict[name]
-                full_path = os.path.join(folder_path, name + ext)
-                full_paths.append(full_path)
+        folder_groups = {}
+        group_idx = 1
+        for paths_list in cluster_dict.values():
+            group_dict = {}
+            for p in paths_list:
+                if os.path.exists(p):
+                    name_only, ext_only = os.path.splitext(os.path.basename(p))
+                    group_dict[name_only] = ext_only
+            if len(group_dict) >= 2:
+                folder_groups[f"{folder_name}_img_group_{group_idx}"] = group_dict
+                group_idx += 1
 
-            set_name = f"{folder_name}_image_group_{group_counter}"
-            folder_clustered_sets[set_name] = set(full_paths)
-            group_counter += 1
-
-        # عرض المجموعات مع الأوصاف
-        print(f"  - تم انشاء {len(cluster_dict)} مجموعة:")
-        for set_name, paths in folder_clustered_sets.items():
-            print(f"    {set_name}: {len(paths)} صورة")
-            for p in paths:
-                img_name = os.path.splitext(os.path.basename(p))[0]
-                caption = captions_dict.get(img_name, "بدون وصف")
-                print(f"      -> {img_name}: \"{caption}\"")
-
-        save_cluster_scripts(folder_name, folder_clustered_sets)
+        save_image_cluster_scripts(folder_name, folder_groups)
 
     print("\n" + "=" * 60)
-    print("تم اتمام عملية التجميع بنجاح!")
+    print("تم إتمام التجميع بنجاح!")
     print("=" * 60)
 
 
+# ═══════════════════════════════════════════════
+# التشغيل الرئيسي
+# ═══════════════════════════════════════════════
+
 if __name__ == "__main__":
-    main()
+    # المرحلة 1: كشف المكررات ونقلها
+    moved_paths = run_duplicate_detection()
+
+    # المرحلة 2: تجميع الصور النظيفة فقط
+    run_clustering(moved_paths)

@@ -1,0 +1,136 @@
+{
+  "created_folders": [
+    {
+      "group_name": "desktop_group_1",
+      "folder_path": "C:\\Users\\eyad\\Desktop\\desktop_group_1",
+      "files_count": 3,
+      "operation": "copy"
+    },
+    {
+      "group_name": "desktop_group_2",
+      "folder_path": "C:\\Users\\eyad\\Desktop\\desktop_group_2",
+      "files_count": 6,
+      "operation": "copy"
+    },
+    {
+      "group_name": "desktop_group_3",
+      "folder_path": "C:\\Users\\eyad\\Desktop\\desktop_group_3",
+      "files_count": 1,
+      "operation": "copy"
+    },
+    {
+      "group_name": "desktop_group_4",
+      "folder_path": "C:\\Users\\eyad\\Desktop\\desktop_group_4",
+      "files_count": 1,
+      "operation": "copy"
+    },
+    {
+      "group_name": "desktop_group_5",
+      "folder_path": "C:\\Users\\eyad\\Desktop\\desktop_group_5",
+      "files_count": 5,
+      "operation": "copy"
+    },
+    {
+      "group_name": "desktop_group_6",
+      "folder_path": "C:\\Users\\eyad\\Desktop\\desktop_group_6",
+      "files_count": 2,
+      "operation": "copy"
+    },
+    {
+      "group_name": "desktop_group_7",
+      "folder_path": "C:\\Users\\eyad\\Desktop\\desktop_group_7",
+      "files_count": 1,
+      "operation": "copy"
+    },
+    {
+      "group_name": "desktop_group_8",
+      "folder_path": "C:\\Users\\eyad\\Desktop\\desktop_group_8",
+      "files_count": 4,
+      "operation": "copy"
+    },
+    {
+      "group_name": "desktop_group_9",
+      "folder_path": "C:\\Users\\eyad\\Desktop\\desktop_group_9",
+      "files_count": 1,
+      "operation": "copy"
+    },
+    {
+      "group_name": "desktop_group_10",
+      "folder_path": "C:\\Users\\eyad\\Desktop\\desktop_group_10",
+      "files_count": 1,
+      "operation": "copy"
+    },
+    {
+      "group_name": "documents_group_1",
+      "folder_path": "C:\\Users\\eyad\\Documents\\documents_group_1_3",
+      "files_count": 1,
+      "operation": "copy"
+    },
+    {
+      "group_name": "documents_group_2",
+      "folder_path": "C:\\Users\\eyad\\Documents\\documents_group_2_3",
+      "files_count": 1,
+      "operation": "copy"
+    },
+    {
+      "group_name": "documents_group_3",
+      "folder_path": "C:\\Users\\eyad\\Documents\\documents_group_3_3",
+      "files_count": 4,
+      "operation": "copy"
+    },
+    {
+      "group_name": "documents_group_4",
+      "folder_path": "C:\\Users\\eyad\\Documents\\documents_group_4_3",
+      "files_count": 2,
+      "operation": "copy"
+    },
+    {
+      "group_name": "documents_group_5",
+      "folder_path": "C:\\Users\\eyad\\Documents\\documents_group_5",
+      "files_count": 1,
+      "operation": "copy"
+    },
+    {
+      "group_name": "documents_group_6",
+      "folder_path": "C:\\Users\\eyad\\Documents\\documents_group_6",
+      "files_count": 1,
+      "operation": "copy"
+    },
+    {
+      "group_name": "downloads_group_1",
+      "folder_path": "C:\\Users\\eyad\\Downloads\\downloads_group_1_3",
+      "files_count": 13,
+      "operation": "copy"
+    },
+    {
+      "group_name": "downloads_group_2",
+      "folder_path": "C:\\Users\\eyad\\Downloads\\downloads_group_2_3",
+      "files_count": 6,
+      "operation": "copy"
+    },
+    {
+      "group_name": "downloads_group_3",
+      "folder_path": "C:\\Users\\eyad\\Downloads\\downloads_group_3_3",
+      "files_count": 1,
+      "operation": "copy"
+    },
+    {
+      "group_name": "downloads_group_4",
+      "folder_path": "C:\\Users\\eyad\\Downloads\\downloads_group_4_3",
+      "files_count": 1,
+      "operation": "copy"
+    },
+    {
+      "group_name": "downloads_group_5",
+      "folder_path": "C:\\Users\\eyad\\Downloads\\downloads_group_5_3",
+      "files_count": 1,
+      "operation": "copy"
+    },
+    {
+      "group_name": "downloads_group_6",
+      "folder_path": "C:\\Users\\eyad\\Downloads\\downloads_group_6_3",
+      "files_count": 1,
+      "operation": "copy"
+    }
+  ]
+}
