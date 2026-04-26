@@ -473,6 +473,8 @@ class KiroApp(QMainWindow):
 
         if page_id in self.screens:
             self.stacked_widget.setCurrentWidget(self.screens[page_id])
+            if page_id == "db":
+                self.screens["db"].update_stats()
 
         # إظهار/إخفاء شريط العنوان العلوي
         if page_id == "sp":
@@ -506,7 +508,10 @@ class KiroApp(QMainWindow):
             self.findChild(QFrame, "mainFrame").setStyleSheet(f"QFrame#mainFrame {{ background: transparent; border-bottom-left-radius: 14px; border-bottom-right-radius: 14px; border: 1px solid {COLORS['border']}; border-top: none; }}")
 
         if page_id == "pr" and kwargs.get("start_processing"):
-            self.screens["pr"].start_processing()
+            self.screens["pr"].start_processing(
+                target_paths=kwargs.get("target_paths"),
+                mode=kwargs.get("mode", "all")
+            )
 
     def _toggle_sidebar(self):
         if self.sidebar_visible:
@@ -602,6 +607,12 @@ def main():
     app.setLayoutDirection(lang_manager.direction)
     
     app.setStyleSheet(GLOBAL_STYLESHEET)
+    
+    # مسح نتائج الجلسات السابقة عند بدء التشغيل لضمان تصفير الواجهة
+    json_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "created_folders.json")
+    if os.path.exists(json_path):
+        try: os.remove(json_path)
+        except: pass
 
     window = KiroApp()
     window.show()

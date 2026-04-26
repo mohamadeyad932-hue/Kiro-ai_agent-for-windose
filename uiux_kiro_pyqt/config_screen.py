@@ -229,8 +229,10 @@ class ConfigScreen(QWidget):
 
         self._type_card_lbl, type_card = self._create_card("config_types_title")
         tc_layout = type_card.layout()
-        tc_layout.addWidget(ToggleRow("config_text_data", "config_text_data_sub", True))
-        tc_layout.addWidget(ToggleRow("config_visual_data", "config_visual_data_sub", True))
+        self.toggle_text = ToggleRow("config_text_data", "config_text_data_sub", True)
+        self.toggle_visual = ToggleRow("config_visual_data", "config_visual_data_sub", True)
+        tc_layout.addWidget(self.toggle_text)
+        tc_layout.addWidget(self.toggle_visual)
 
         cards_grid.addWidget(type_card, 0, 1)
 
@@ -325,5 +327,16 @@ class ConfigScreen(QWidget):
         if use_downloads: target_paths.append(os.path.normpath(os.path.expanduser("~/Downloads")))
         if use_documents: target_paths.append(os.path.normpath(os.path.expanduser("~/Documents")))
 
+        # تحديد الوضع (Mode)
+        is_text = self.toggle_text.switch.checked
+        is_visual = self.toggle_visual.switch.checked
+        
+        mode = "all"
+        if is_text and not is_visual: mode = "text"
+        elif is_visual and not is_text: mode = "images"
+        elif not is_text and not is_visual:
+            ModernDialog(t("err_path_title"), "Please select at least one data type.", self).exec()
+            return
+
         if self.on_navigate:
-            self.on_navigate("pr", start_processing=True, target_paths=target_paths)
+            self.on_navigate("pr", start_processing=True, target_paths=target_paths, mode=mode)

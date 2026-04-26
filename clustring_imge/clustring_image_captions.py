@@ -23,11 +23,19 @@ except ImportError:
 
 try:
     from sklearn.cluster import AgglomerativeClustering
+    from sklearn.metrics import silhouette_score
+    from sklearn.decomposition import PCA
 except ImportError:
     print("pip install scikit-learn numpy")
     sys.exit(1)
 
-# ─────────────── الإعدادات ───────────────
+try:
+    from scipy.cluster.hierarchy import linkage, fcluster
+except ImportError:
+    print("pip install scipy")
+    sys.exit(1)
+
+# الاعدادات
 
 HOME = os.path.expanduser("~")
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -52,7 +60,7 @@ THRESHOLD = 12
 DUPLICATES_DIR = os.path.join(HOME, "Desktop", "Kiro_Duplicates")
 
 def dynamic_import(name):
-    """استيراد الوحدات ديناميكياً لتجنب أخطاء الاستيراد الثابتة"""
+    """استيراد الوحدات ديناميكيا لتجنب اخطاء الاستيراد الثابتة"""
     import importlib
     try:
         return importlib.import_module(name)
@@ -60,9 +68,70 @@ def dynamic_import(name):
         return None
 
 
-# ═══════════════════════════════════════════════
+# كشف العتبة تلقائيا عبر Dendrogram + Silhouette
+def auto_find_best_threshold(vectors):
+    """
+    يبني شجرة التجميع مرة واحدة ثم يجرب 100 عتبة
+    ويختار العتبة التي تعطي اعلى Silhouette Score
+    بدون الحاجة لبيانات حقيقية (ground truth)
+    """
+    print(f"  Searching for best threshold (Dendrogram + Silhouette)...")
+    
+    # بناء الشجرة الهرمية بمسافة Cosine وطريقة الربط Average
+    Z = linkage(vectors, method='average', metric='cosine')
+    distances = Z[:, 2]
+    
+    min_dist = distances.min()
+    max_dist = distances.max()
+    
+    # انشاء 100 نقطة (عتبة) محتملة بين اقل واكبر مسافة دمج
+    candidates = np.linspace(min_dist, max_dist, 100)
+    
+    best_thr = None
+    best_sil = -1
+    best_n   = 0
+    results  = []
+    
+    for thr in candidates:
+        predicted = fcluster(Z, t=thr, criterion='distance')
+        n_clusters = len(set(predicted))
+        
+        # استبعاد التجميعات غير المنطقية
+        if 2 <= n_clusters <= len(vectors) / 1.5:
+            try:
+                sil = silhouette_score(vectors, predicted, metric='cosine')
+            except:
+                sil = -1.0
+            
+            results.append((thr, n_clusters, sil))
+            
+            if sil > best_sil:
+                best_sil = sil
+                best_thr = thr
+                best_n   = n_clusters
+    
+    if best_thr is None:
+        # fallback: اذا فشلت كل العتبات نستخدم النقطة الوسطى
+        best_thr = (min_dist + max_dist) / 2
+        print(f"  No optimal threshold found, using midpoint: {best_thr:.4f}")
+    else:
+        print(f"  Best threshold found: {best_thr:.4f} (clusters: {best_n}, Silhouette: {best_sil:.3f})")
+    
+    # طباعة افضل 5 نتائج
+    results.sort(key=lambda x: x[2], reverse=True)
+    if results:
+        print(f"  {'-'*55}")
+        print(f"  {'Threshold':>10} | {'Clusters':>9} | {'Silhouette':>10}")
+        print(f"  {'-'*55}")
+        for i, (thr, n, sil) in enumerate(results[:5]):
+            marker = " *" if i == 0 else ""
+            print(f"  {thr:>8.4f} | {n:>9d} | {sil:>10.3f}{marker}")
+        print(f"  {'-'*55}")
+    
+    return round(best_thr, 4)
+
+
 # المرحلة 1: كشف المكررات
-# ═══════════════════════════════════════════════
 
 def get_all_images(folders):
     """جمع كل الصور من المجلدات الثلاثة"""
@@ -79,25 +148,25 @@ def get_all_images(folders):
                     if ext.lower() in EXTENSIONS:
                         all_images[entry.path] = entry.name
         except PermissionError:
-            print(f"  ⚠ لا توجد صلاحية: {folder_path}")
+            print(f"  No permission: {folder_path}")
     return all_images
 
 
 def compute_hashes(all_images):
-    """حساب البصمة الإدراكية لكل صورة"""
+    """حساب البصمة الادراكية لكل صورة"""
     hashes = {}
-    print(f"\nجاري حساب البصمات لـ {len(all_images)} صورة...")
+    print(f"\nComputing hashes for {len(all_images)} images...")
     for path in all_images:
         try:
             img = Image.open(path).convert("RGB")
             hashes[path] = imagehash.phash(img)
         except Exception as e:
-            print(f"  ⚠ خطأ: {os.path.basename(path)} → {e}")
+            print(f"  Error: {os.path.basename(path)} - {e}")
     return hashes
 
 
 def find_duplicates(hashes):
-    """إيجاد الصور المتشابهة بمقارنة كل الأزواج"""
+    """ايجاد الصور المتشابهة بمقارنة كل الازواج"""
     paths = list(hashes.keys())
     duplicate_groups = []
 
@@ -118,23 +187,23 @@ def find_duplicates(hashes):
 
 
 def save_duplicates_script(duplicate_groups):
-    """حفظ المكررات في قاموس وحد"""
+    """حفظ المكررات في قاموس موحد"""
     script_path = os.path.join(CURRENT_DIR, "duplicates_images.py")
 
     all_duplicates = {}
     for group in duplicate_groups:
         sorted_group = sorted(group)
-        for dup_path in sorted_group[1:]:  # الأول يبقى، الباقي مكررات
+        for dup_path in sorted_group[1:]:
             name, ext = os.path.splitext(os.path.basename(dup_path))
             all_duplicates[name] = ext.lower()
 
     lines = [
         '"""',
-        "قاموس الصور المكررة — توليد تلقائي",
-        "كل عنصر: اسم الملف بدون امتداد → الامتداد",
+        "Duplicate images dictionary - auto generated",
+        "Each entry: filename without extension -> extension",
         '"""',
         "",
-        f"# إجمالي المكررات: {len(all_duplicates)} صورة",
+        f"# Total duplicates: {len(all_duplicates)} images",
         "duplicates = {",
     ]
     for name, ext in all_duplicates.items():
@@ -143,28 +212,28 @@ def save_duplicates_script(duplicate_groups):
 
     with open(script_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
-    print(f"  [+] تم حفظ: duplicates_images.py ({len(all_duplicates)} مكرر)")
+    print(f"  [+] Saved: duplicates_images.py ({len(all_duplicates)} duplicates)")
 
 
 def move_duplicates(duplicate_groups):
-    """نقل المكررات لمجلد خاص وإرجاع مسارات الصور المنقولة"""
-    moved_paths = set()  # ← مهم: بنرجعها للمرحلة الثانية تتجاهلها
+    """نقل المكررات لمجلد خاص وارجاع مسارات الصور المنقولة"""
+    moved_paths = set()
 
     if not duplicate_groups:
-        print("\n✅ لم يتم العثور على صور مكررة.")
+        print("\nNo duplicate images found.")
         return moved_paths
 
     os.makedirs(DUPLICATES_DIR, exist_ok=True)
-    print(f"\nتم العثور على {len(duplicate_groups)} مجموعة مكررة:")
-    print(f"سيتم نقل المكررات إلى: {DUPLICATES_DIR}\n")
+    print(f"\nFound {len(duplicate_groups)} duplicate groups:")
+    print(f"Moving duplicates to: {DUPLICATES_DIR}\n")
 
     for i, group in enumerate(duplicate_groups, 1):
         sorted_group = sorted(group)
         original = sorted_group[0]
         duplicates = sorted_group[1:]
 
-        print(f"  المجموعة {i}:")
-        print(f"    ✅ يبقى: {os.path.basename(original)}")
+        print(f"  Group {i}:")
+        print(f"    Keep: {os.path.basename(original)}")
 
         for dup in duplicates:
             dest = os.path.join(DUPLICATES_DIR, os.path.basename(dup))
@@ -173,23 +242,23 @@ def move_duplicates(duplicate_groups):
                 dest = os.path.join(DUPLICATES_DIR, f"{name}_dup{i}{ext}")
             try:
                 shutil.move(dup, dest)
-                moved_paths.add(dup)  # ← نسجل المسار قبل النقل
-                print(f"    🔁 نُقل: {os.path.basename(dup)}")
+                moved_paths.add(dup)
+                print(f"    Moved: {os.path.basename(dup)}")
             except Exception as e:
-                print(f"    ⚠ خطأ في النقل: {e}")
+                print(f"    Error moving: {e}")
 
     return moved_paths
 
 
 def run_duplicate_detection():
-    """تشغيل المرحلة الأولى كاملة وإرجاع مسارات المكررات المنقولة"""
+    """تشغيل المرحلة الاولى كاملة وارجاع مسارات المكررات المنقولة"""
     print("=" * 60)
-    print("المرحلة 1: كشف المكررات — مشروع Kiro")
+    print("Phase 1: Duplicate Detection - Kiro Project")
     print("=" * 60)
 
     all_images = get_all_images(FOLDERS)
     if not all_images:
-        print("لم يتم العثور على أي صور.")
+        print("No images found.")
         return set()
 
     hashes = compute_hashes(all_images)
@@ -198,25 +267,23 @@ def run_duplicate_detection():
     moved_paths = move_duplicates(duplicate_groups)
 
     remaining = len(all_images) - len(moved_paths)
-    print(f"\n✅ الصور المتبقية بعد إزالة المكررات: {remaining}")
+    print(f"\nRemaining images after removing duplicates: {remaining}")
     return moved_paths
 
 
-# ═══════════════════════════════════════════════
 # المرحلة 2: التجميع
-# ═══════════════════════════════════════════════
 
 def save_image_cluster_scripts(folder_name, folder_groups):
     """حفظ المجموعات في ملفات .py"""
     script_path = os.path.join(CURRENT_DIR, f"similar_{folder_name}_images.py")
 
-    lines = ['"""', f"مجموعات الصور المتشابهة: {folder_name}", '"""', ""]
+    lines = ['"""', f"Similar image groups: {folder_name}", '"""', ""]
     saved_groups = 0
 
     for group_name, files_dict in folder_groups.items():
         if len(files_dict) < 2:
             continue
-        lines.append(f"# {len(files_dict)} صور متشابهة")
+        lines.append(f"# {len(files_dict)} similar images")
         lines.append(f"{group_name} = {{")
         for name, ext in files_dict.items():
             lines.append(f'    "{name.replace(chr(34), chr(92)+chr(34))}": "{ext}",')
@@ -225,17 +292,18 @@ def save_image_cluster_scripts(folder_name, folder_groups):
 
     with open(script_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
-    print(f"  [+] تم حفظ: similar_{folder_name}_images.py ({saved_groups} مجموعة)")
+    print(f"  [+] Saved: similar_{folder_name}_images.py ({saved_groups} groups)")
 
 
 def run_clustering(moved_paths):
-    """تشغيل المرحلة الثانية — بتتجاهل الصور المنقولة كمكررات"""
+    """تشغيل المرحلة الثانية مع تجاهل الصور المنقولة كمكررات"""
     print("\n" + "=" * 60)
-    print("المرحلة 2: تجميع الصور — مشروع Kiro")
+    print("Phase 2: Image Clustering - Kiro Project")
+    print("Techniques: PCA + Cosine Distance + Auto Threshold")
     print("=" * 60)
 
     for folder_name, folder_path in FOLDERS.items():
-        # تحميل البيانات ديناميكياً لكل مجلد
+        # تحميل البيانات ديناميكيا لكل مجلد
         mod_files = dynamic_import(f"{folder_name}_images_files")
         mod_vectors = dynamic_import(f"{folder_name}_images_vectors")
         
@@ -243,10 +311,10 @@ def run_clustering(moved_paths):
         vectors_dict = getattr(mod_vectors, f"{folder_name}_images_vectors", {}) if mod_vectors else {}
 
         if not files_dict or not vectors_dict:
-            print(f"  [!] لم يتم العثور على بصمات لـ {folder_name}، تم التخطي.")
+            print(f"  [!] No embeddings found for {folder_name}, skipping.")
             continue
 
-        print(f"\n[{folder_name}] جاري تحليل البصمات...")
+        print(f"\n[{folder_name}] Analyzing embeddings...")
 
         valid_paths = []
         valid_vectors = []
@@ -254,11 +322,11 @@ def run_clustering(moved_paths):
         for name, ext in files_dict.items():
             full_path = os.path.normpath(os.path.join(folder_path, name + ext))
 
-            # ← هون الدمج: تجاهل الصور المنقولة كمكررات + التحقق من الوجود
+            # تجاهل الصور المنقولة كمكررات + التحقق من الوجود
             if full_path in moved_paths:
                 continue
             if not os.path.exists(full_path):
-                print(f"  ⚠ غير موجود، تم تخطيه: {name}{ext}")
+                print(f"  Not found, skipping: {name}{ext}")
                 continue
             if name not in vectors_dict:
                 continue
@@ -267,18 +335,31 @@ def run_clustering(moved_paths):
             valid_vectors.append(vectors_dict[name])
 
         if len(valid_paths) < 2:
-            print("  - لا توجد صور كافية للتجميع.")
+            print("  - Not enough images for clustering.")
             continue
 
-        print(f"  - عدد الصور الصالحة للتجميع: {len(valid_paths)}")
+        print(f"  - Valid images for clustering: {len(valid_paths)}")
 
+        vectors_array = np.array(valid_vectors)
+
+        # خفض الابعاد PCA - تنظيف الفيكتورات من الضوضاء
+        n_pca = min(386, len(valid_paths), vectors_array.shape[1])
+        print(f"  PCA dimensionality reduction ({vectors_array.shape[1]} -> {n_pca})...")
+        pca = PCA(n_components=n_pca, random_state=42)
+        optimized_vectors = pca.fit_transform(vectors_array)
+
+        # كشف العتبة تلقائيا
+        best_threshold = auto_find_best_threshold(optimized_vectors)
+
+        # التجميع بمسافة Cosine
+        print(f"  Clustering with optimal threshold: {best_threshold}...")
         clustering = AgglomerativeClustering(
             n_clusters=None,
             metric="cosine",
-            distance_threshold=0.26,
+            distance_threshold=best_threshold,
             linkage="average",
         )
-        clusters = clustering.fit_predict(np.array(valid_vectors))
+        clusters = clustering.fit_predict(optimized_vectors)
 
         cluster_dict = defaultdict(list)
         for path, c_id in zip(valid_paths, clusters):
@@ -299,13 +380,11 @@ def run_clustering(moved_paths):
         save_image_cluster_scripts(folder_name, folder_groups)
 
     print("\n" + "=" * 60)
-    print("تم إتمام التجميع بنجاح!")
+    print("Clustering completed successfully!")
     print("=" * 60)
 
 
-# ═══════════════════════════════════════════════
 # التشغيل الرئيسي
-# ═══════════════════════════════════════════════
 
 if __name__ == "__main__":
     # المرحلة 1: كشف المكررات ونقلها

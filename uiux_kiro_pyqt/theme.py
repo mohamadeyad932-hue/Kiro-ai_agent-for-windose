@@ -233,5 +233,3 @@ class ModernDialog(QDialog):
     def paintEvent(self, event):
         # منع الرسم الافتراضي للخلفية لضمان عمل الحدود الدائرية
         pass
-
-
