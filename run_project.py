@@ -15,7 +15,7 @@ elif sys.stdout.encoding != 'UTF-8':
         pass
 
 
-def run_script(dir_name, script_name, description, custom_path=None):
+def run_script(dir_name, script_name, description, folder_name=None, folder_path=None):
     """Executes a specific script inside its directory"""
     script_path = os.path.join(dir_name, script_name)
     
@@ -30,9 +30,11 @@ def run_script(dir_name, script_name, description, custom_path=None):
     try:
         # Prepare command
         command = [sys.executable, "-u", script_name]
-        if custom_path:
-            command.append(custom_path) # Pass custom path as argument
-            print(f"[*] Targeting Custom Path: {custom_path}")
+        if folder_name:
+            command.append(folder_name)
+        if folder_path:
+            command.append(folder_path)
+            print(f"[*] Targeting Folder: {folder_name} ({folder_path})")
 
         process = subprocess.Popen(command, 
                                    cwd=dir_name,
@@ -60,25 +62,25 @@ def run_script(dir_name, script_name, description, custom_path=None):
         print(f"\n[!] Unexpected Error: {e}")
         return False
 
-def process_text_collection(custom_path=None):
+def process_text_collection(folder_name, folder_path):
     print("\n>>> Collecting Text Data (Embedding & Clustering) <<<")
     steps = [
         ("Processing text files", "files_Embedder.py", "Text Embedding"),
         ("clustring_files", "clustring_file_text.py", "Text Clustering")
     ]
     for d, s, desc in steps:
-        if not run_script(d, s, desc, custom_path):
+        if not run_script(d, s, desc, folder_name, folder_path):
             return False
     return True
 
-def process_images_collection(custom_path=None):
+def process_images_collection(folder_name, folder_path):
     print("\n>>> Collecting Image Data (Captioning & Clustering) <<<")
     steps = [
         ("Processing image", "images_caption_Embedder.py", "Image Captioning"),
         ("clustring_imge", "clustring_image_captions.py", "Image Clustering")
     ]
     for d, s, desc in steps:
-        if not run_script(d, s, desc, custom_path):
+        if not run_script(d, s, desc, folder_name, folder_path):
             return False
     return True
 
@@ -113,12 +115,12 @@ def execute_pipeline(mode_choice, target_paths):
         print(f"{'='*50}")
         
         if mode_choice == '1': # Full System
-            process_text_collection(path)
-            process_images_collection(path)
+            process_text_collection(name, path)
+            process_images_collection(name, path)
         elif mode_choice == '2': # Text Only
-            process_text_collection(path)
+            process_text_collection(name, path)
         elif mode_choice == '3': # Images Only
-            process_images_collection(path)
+            process_images_collection(name, path)
     
     # Organization (Run once globally)
     print(f"\n{'='*50}")

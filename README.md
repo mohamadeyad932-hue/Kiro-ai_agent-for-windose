@@ -1,84 +1,97 @@
-# Kiro: Intelligent Windows File Organizer Agent 🤖📂
+# Kiro AI: The Intelligent Autonomous File Agent 🤖📂
+
+![Kiro AI Hero](kiro_ai_hero.png)
 
 [![Python](https://img.shields.io/badge/Python-3.9%2B-blue)](https://www.python.org/)
-[![AI Powered](https://img.shields.io/badge/AI-Powered-green)]()
-[![Status](https://img.shields.io/badge/Status-Prototype-orange)]()
+[![UI/UX](https://img.shields.io/badge/UI-PyQt6-violet)]()
+[![AI Powered](https://img.shields.io/badge/AI-SBERT%20%2B%20BLIP-green)]()
+[![License](https://img.shields.io/badge/License-MIT-yellow)]()
 
-> **Kiro** is not just a file sorter; it's a context-aware intelligent agent that lives in your Windows background, understanding your documents, images, and audio files to eliminate digital clutter automatically.
-
----
-
-## 📖 Overview
-
-In the modern digital workspace, "Digital Clutter" is a productivity killer. Traditional organizers rely on file extensions (.pdf, .jpg), which is primitive. **Kiro** leverages **Large Language Models (LLMs)** and **Computer Vision** to understand the *semantic content* of your files.
-
-Whether it's a financial report, a university lecture, or a personal photo, Kiro analyzes the content and moves it to the right place—or creates a new category for it—without you lifting a finger.
-
-## 🚀 Key Features
-
-* **⚡ Real-Time Monitoring:** Continuously watches Desktop, Downloads, and Documents using `watchdog` events.
-* **🧠 Semantic Understanding:**
-    * **Text:** Uses **BERT** models to understand the context of PDFs and Word docs.
-    * **Audio:** Transcribes audio (MP3/WAV) using **OpenAI Whisper** to classify content (e.g., "Lecture" vs. "Music").
-    * **Vision:** Analyzes image content using Vision Models to tag and sort photos based on visual elements.
-* **✨ Magical Clustering:** Utilizes **K-Means clustering** to group uncategorized files based on similarity.
-* **🛡️ Smart Deduplication:**
-    * Uses **Perceptual Hashing** for images (detects duplicates even if resized).
-    * Uses **Cosine Similarity** for text documents to find content overlaps.
-* **🖥️ User Control:** Simple GUI to toggle the agent on/off.
+> **Kiro AI** is a state-of-the-art, context-aware autonomous agent designed to revolutionize personal data management. By moving beyond primitive extension-based sorting, Kiro utilizes **Deep Learning** and **Computer Vision** to understand the "soul" of your files—organizing them based on semantic meaning and visual context.
 
 ---
 
-## 🛠️ Technical Architecture & Tech Stack
-
-The project is built using a modular pipeline approach:
-
-| Component | Technology / Library | Description |
-| :--- | :--- | :--- |
-| **Core Language** | Python 🐍 | The backbone of the agent. |
-| **File Operations** | `watchdog`, `shutil` | Event-driven file system monitoring and manipulation. |
-| **NLP & Embeddings** | `sentence-transformers` (BERT) | Converting text to vector embeddings for understanding context. |
-| **Audio Processing** | `openai-whisper` | State-of-the-art speech-to-text transcription. |
-| **Clustering** | `scikit-learn` (K-Means) | Unsupervised learning to group similar documents. |
-| **Image Processing** | `imagehash`, `GPT-4V` (Concept) | Perceptual hashing for deduplication and VLM for understanding. |
-| **Text Extraction** | `pdfplumber`, `python-docx` | Extracting raw text from various document formats. |
-
-### How It Works (The Pipeline)
-1.  **Monitor:** The agent detects a `FileCreated` event in target directories.
-2.  **Extract:** Depending on file type, text is extracted or audio is transcribed.
-3.  **Embed:** The content is passed through a Transformer model to generate a numerical vector (Embedding).
-4.  **Classify/Cluster:** The vector is compared against existing cluster centers (using K-Means) to determine the category.
-5.  **Action:** The file is moved to the appropriate folder. If it's a duplicate (checked via Hashing), it is flagged or removed.
+## 🚀 Key Innovation: Semantic vs. Structural Sorting
+Traditional file organizers look at *extensions* (.txt, .jpg). **Kiro looks at *intent*.** 
+- A PDF about "Machine Learning" and a Word doc about "Neural Networks" are grouped together.
+- A photo of a "Mountain" and a caption-less image of a "Valley" are recognized as "Nature" and clustered accordingly.
 
 ---
 
-## 📊 Comparison: Kiro vs. Traditional Assistants
+## ✨ Features that Define Kiro AI
 
-| Feature | Kiro 🤖 | Siri / Cortana 🗣️ | Traditional Scripts 📜 |
-| :--- | :---: | :---: | :---: |
-| **Focus** | File Organization & Management | General Voice Commands | Basic Extension Sorting |
-| **Content Awareness** | ✅ Deep (Semantic) | ❌ None | ❌ None |
-| **Automation** | ✅ Proactive (Background) | ❌ Reactive (Waiting for command) | ✅ Reactive |
-| **Image Understanding** | ✅ Yes | ❌ No | ❌ No |
+### 🧠 Semantic Intelligence (NLP)
+- **Content-First Analysis:** Uses **Sentence-BERT (SBERT)** to convert document text into high-dimensional semantic vectors.
+- **Contextual Grouping:** Employs **Agglomerative Hierarchical Clustering** to discover natural categories without manual input.
+- **Smart Labeling:** Automatically derives cluster names by calculating the **Group Centroid** and identifying the most representative keywords.
 
----
+### 🖼️ Visual Cognition (Computer Vision)
+- **Generative Captioning:** Powered by the **BLIP (Bootstrapping Language-Image Pre-training)** model to generate descriptive text for every image.
+- **Image-to-Text Clustering:** Maps visual features into the same semantic space as text, allowing for unified organization.
+- **Perceptual Hashing:** Integrated **imagehash** logic to identify and manage near-duplicate images with surgical precision.
 
-## 👨‍💻 Team
-
-This project was developed as a graduation project at **Damascus Training Centre (DTC)** - AI Department.
-
-* **Developers:**
-    * Iyad Muhammad
-    * Wasim Mahmoud
-    * Lana Al-Sheikh
-* **Supervisor:** Eng. Nour Al-Hakim
-* **Head of Department:** Eng. Wasim Al-Madi
+### 📊 Modern Neural Dashboard
+- **Glassmorphism UI:** Built with **PyQt6**, featuring a premium dark-mode interface with smooth transitions and real-time processing feedback.
+- **Live Statistics:** A data-driven dashboard that verifies the physical file system against AI predictions in real-time.
+- **Cross-Lingual Support:** Fully optimized for both **Arabic (RTL)** and **English (LTR)** workflows.
 
 ---
 
-## 🔮 Future Roadmap
-* [ ] Integration with Cloud Services (Google Drive / OneDrive).
-* [ ] Cross-platform support (Linux/macOS).
-* [ ] Advanced dashboard for viewing file statistics.
+## 🛠️ Technical Deep Dive (The "Engine Room")
+
+### 1. Vectorization & Dimensionality Reduction
+To ensure high performance and accuracy, Kiro applies **PCA (Principal Component Analysis)** on the 768-dimensional SBERT embeddings. This reduces noise and computational cost while preserving semantic variance.
+
+### 2. Optimized Clustering Logic
+Kiro doesn't guess how many folders you need. It uses the **Silhouette Score** and **Dendrogram Analysis** to mathematically determine the optimal `distance_threshold`, ensuring clusters are neither too broad nor too specific.
+
+### 3. Performance Metrics
+Validated against the **BBC News Dataset**, achieving industry-standard scores:
+- **ARI (Adjusted Rand Index):** Measures the similarity between predicted and ground truth clusters.
+- **NMI (Normalized Mutual Information):** Evaluates the amount of shared information.
+- **Purity:** Measures the extent to which clusters contain a single class.
 
 ---
+
+## 💻 Tech Stack
+
+| Domain | Technology |
+| :--- | :--- |
+| **Language** | Python 3.10+ |
+| **Framework** | PyQt6 |
+| **AI Models** | SBERT (all-mpnet-base-v2), BLIP |
+| **ML Libraries** | Scikit-learn, PyTorch, NumPy, SciPy |
+| **Document Processing** | PyMuPDF, python-docx |
+| **Image Analysis** | PIL, ImageHash |
+
+---
+
+## 👨‍💻 Developed By
+**Kiro AI** was engineered by a specialized team at the **Damascus Training Centre (DTC)** - AI Department.
+
+- **Iyad Muhammad** - *Lead AI Engineer & System Architect*
+- **Wasim Mahmoud** - *Backend & Data Pipeline*
+- **Lana Al-Sheikh** - *UI/UX Design*
+- **Academic Supervisor:** Eng. Nour Al-Hakim
+- **Department Head:** Eng. Wasim Al-Madi
+
+---
+
+## 🔧 Getting Started
+
+1. **Clone & Navigate:**
+   ```bash
+   git clone https://github.com/mohamadeyad932-hue/Kiro-ai_agent-for-windose.git
+   cd Kiro-ai_agent-for-windose
+   ```
+2. **Environment Setup:**
+   ```bash
+   pip install -r requirements.txt
+   ```
+3. **Execution:**
+   ```bash
+   python uiux_kiro_pyqt/main.py
+   ```
+
+---
+*Kiro AI - Transforming digital chaos into structured intelligence.*

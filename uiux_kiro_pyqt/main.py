@@ -151,7 +151,7 @@ class KiroApp(QMainWindow):
         outer_layout.setContentsMargins(15, 2, 15, 12)
         outer_layout.setSpacing(0)
 
-        # ─── شريط العنوان العلوي ───
+        # ──شريط العنوان العلوي ───
         self.titlebar = QFrame()
         self.titlebar.setObjectName("titlebar")
         self.titlebar.setFixedHeight(42)

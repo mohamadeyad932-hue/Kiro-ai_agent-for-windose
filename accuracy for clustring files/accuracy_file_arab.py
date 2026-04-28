@@ -311,7 +311,7 @@ def compare_thresholds(vectors, true_labels, base_threshold):
 def main():
     print("╔══════════════════════════════════════════════════════════════╗")
     print("║   تقييم دقة خوارزمية التجميع — مشروع Kiro AI               ║")
-    print("║   SBERT Embedding + Agglomerative Clustering Evaluation     ║")
+    print("║   SBERT Embedding + Agglomerative Clustering Evaluation  arabic   ║")
     print("╚══════════════════════════════════════════════════════════════╝")
 
     bbc_root = sys.argv[1] if len(sys.argv) > 1 and os.path.isdir(sys.argv[1]) else BBC_ROOT
