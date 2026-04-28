@@ -335,7 +335,7 @@ class ConfigScreen(QWidget):
         if is_text and not is_visual: mode = "text"
         elif is_visual and not is_text: mode = "images"
         elif not is_text and not is_visual:
-            ModernDialog(t("err_path_title"), "Please select at least one data type.", self).exec()
+            ModernDialog(t("err_path_title"), t("err_type_missing"), self).exec()
             return
 
         if self.on_navigate:

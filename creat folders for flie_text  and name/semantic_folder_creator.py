@@ -1,3 +1,4 @@
+"تسمية المجلدات "
 import os
 import shutil
 import sys
@@ -43,7 +44,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODEL_PATH = os.path.join(BASE_DIR, "models", "sbert_high_res")
 CLUSTERING_DIR = os.path.join(BASE_DIR, "clustring_files")
 
-print("⏳ جاري تحميل نموذج SBERT...")
+print("⏳ Loading SBERT model...")
 sbert_model = SentenceTransformer(MODEL_PATH)
 
 # ==========================================
@@ -101,7 +102,7 @@ def read_file_content(file_path: str) -> str:
                 content = f.read(MAX_CHARS)
 
     except Exception as e:
-        print(f"  [!] تعذر قراءة {os.path.basename(file_path)}: {e}")
+        print(f"  [!] Failed to read {os.path.basename(file_path)}: {e}")
         return ""
 
     return clean_text(content)
@@ -165,7 +166,7 @@ def get_semantic_label(texts):
         best_bigram = max(bigrams, key=lambda x: x[1])
         if best_bigram[1] > 0.3:
             clean_name = best_bigram[0].replace(" ", "_")
-            print(f" اسم المجلد (bigram): {clean_name}")
+            print(f" Folder name (bigram): {clean_name}")
             return clean_name
 
     # --- [طبقة 1] ادمج أفضل 3 Unigrams ---
@@ -174,7 +175,7 @@ def get_semantic_label(texts):
     top_words = [w for w, _ in unigrams_sorted[:top_n]]
     label = "_".join(top_words)
 
-    print(f"     اسم المجلد (unigrams): {label}")
+    print(f"     Folder name (unigrams): {label}")
     return label
 
 
@@ -207,16 +208,16 @@ def save_metadata(group_name, folder_path, files_count):
 def process_dictionaries(clustering_dir):
     """المرور على ملفات القواميس وتحويل المجموعات لمجلدات فعلية"""
     if not os.path.exists(clustering_dir):
-        print(f" مسار القواميس غير موجود: {clustering_dir}")
+        print(f" Dictionaries path not found: {clustering_dir}")
         return
 
-    print("\n جاري البحث في القواميس...")
+    print("\n Searching in dictionaries...")
     for filename in os.listdir(clustering_dir):
         if not filename.endswith(".py"):
             continue
 
         file_path = os.path.join(clustering_dir, filename)
-        print(f"\n{'='*50}\n معالجة القاموس: {filename}\n{'='*50}")
+        print(f"\n{'='*50}\n Processing dictionary: {filename}\n{'='*50}")
 
         spec = importlib.util.spec_from_file_location("module.name", file_path)
         foo = importlib.util.module_from_spec(spec)
@@ -238,7 +239,7 @@ def process_dictionaries(clustering_dir):
             if not valid_files:
                 continue
 
-            print(f"\n🔹 مجموعة: {var_name} ({len(valid_files)} ملفات)")
+            print(f"\n🔹 Group: {var_name} ({len(valid_files)} files)")
 
             parent_path = os.path.dirname(valid_files[0])
 
@@ -262,7 +263,7 @@ def process_dictionaries(clustering_dir):
                 target_folder = f"{original_target}_{counter}"
                 counter += 1
 
-            print(f" إنشاء المجلد: {target_folder}")
+            print(f" Creating folder: {target_folder}")
             os.makedirs(target_folder, exist_ok=True)
 
             for f in valid_files:
@@ -270,9 +271,9 @@ def process_dictionaries(clustering_dir):
                 dest_path = os.path.join(target_folder, fname)
                 try:
                     shutil.move(f, dest_path)
-                    print(f"  نُقل: {fname}")
+                    print(f"  Moved: {fname}")
                 except Exception as e:
-                    print(f"  فشل في نقل {fname}: {e}")
+                    print(f"  Failed to move {fname}: {e}")
             
             # حفظ المعلومات للداشبورد
             save_metadata(label, target_folder, len(valid_files))
@@ -281,4 +282,4 @@ def process_dictionaries(clustering_dir):
 if __name__ == '__main__':
     import time
     process_dictionaries(CLUSTERING_DIR)
-    print("\n تم الانتهاء من جميع القواميس!")
+    print("\n Finished all dictionaries!")

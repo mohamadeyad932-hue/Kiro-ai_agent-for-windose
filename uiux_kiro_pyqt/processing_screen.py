@@ -133,6 +133,19 @@ class PipelineWorker(QThread):
             self.log_signal.emit("=" * 50)
             self.log_signal.emit("[ KIRO AI ] Starting External Project Runner...")
             self.log_signal.emit(f"[ INFO ] Mode : {self.mode.upper()}")
+            
+            # Read GPU settings
+            from PyQt6.QtCore import QSettings
+            settings = QSettings("KiroAI", "Settings")
+            use_gpu = settings.value("gpu_acceleration", True, type=bool)
+            
+            env = os.environ.copy()
+            if not use_gpu:
+                env["CUDA_VISIBLE_DEVICES"] = ""
+                self.log_signal.emit("[ INFO ] GPU Acceleration : DISABLED (CPU Only)")
+            else:
+                self.log_signal.emit("[ INFO ] GPU Acceleration : ENABLED")
+                
             self.log_signal.emit("=" * 50)
             
             # بناء الأمر
@@ -161,7 +174,8 @@ class PipelineWorker(QThread):
                 text=True,
                 encoding="utf-8",
                 errors="replace",
-                bufsize=1 # Line buffered
+                bufsize=1, # Line buffered
+                env=env
             )
 
             if process.stdout:
@@ -444,6 +458,14 @@ class ProcessingScreen(QWidget):
 
         # تحديد المجلد الجذر للمشروع (نفس مكان main.py)
         base_dir = os.path.dirname(os.path.abspath(__file__))
+        
+        # مسح نتائج الجلسة السابقة لضمان عرض نتيجة هذه العملية فقط في لوحة التحكم
+        json_path = os.path.join(os.path.dirname(base_dir), "created_folders.json")
+        if os.path.exists(json_path):
+            try:
+                os.remove(json_path)
+            except Exception as e:
+                self._log(f"[!] Failed to clear previous results: {e}")
 
         self._labels["proc_title"].setText(t("phase1_title"))
         self._labels["proc_sub"].setText(t("phase1_sub"))

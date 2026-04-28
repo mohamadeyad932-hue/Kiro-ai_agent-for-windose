@@ -4,7 +4,7 @@ Kiro AI - Settings Screen (PyQt6) - Bilingual
 """
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
                               QFrame, QScrollArea)
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QSettings
 from PyQt6.QtGui import QFont, QPainter, QBrush, QColor
 from translations import lang_manager, t
 
@@ -15,14 +15,25 @@ from theme import (
 
 
 class ToggleSwitchSettings(QWidget):
-    def __init__(self, checked=False, parent=None):
+    def __init__(self, settings_key=None, default_checked=False, parent=None):
         super().__init__(parent)
         self.setFixedSize(44, 24)
-        self._checked = checked
+        self.settings_key = settings_key
+        self.settings = QSettings("KiroAI", "Settings")
+        
+        if self.settings_key:
+            # Load saved state or use default
+            saved_val = self.settings.value(self.settings_key, default_checked, type=bool)
+            self._checked = saved_val
+        else:
+            self._checked = default_checked
+            
         self.setCursor(Qt.CursorShape.PointingHandCursor)
 
     def mousePressEvent(self, event):
         self._checked = not self._checked
+        if self.settings_key:
+            self.settings.setValue(self.settings_key, self._checked)
         self.update()
 
     def paintEvent(self, event):
@@ -83,7 +94,7 @@ class SettingsScreen(QWidget):
         self._build_group(layout, "settings_group1", [
             ("settings_nlp", "settings_nlp_sub", "badge", "settings_active"),
             ("settings_cv", "settings_cv_sub", "badge", "settings_active"),
-            ("settings_gpu", "settings_gpu_sub", "toggle", True),
+            ("settings_gpu", "settings_gpu_sub", "toggle", "gpu_acceleration"),
         ])
         layout.addSpacing(15)
 
@@ -145,7 +156,7 @@ class SettingsScreen(QWidget):
             # ── عنصر التحكم ──
             ctrl_widget = None
             if ctrl_type == "toggle":
-                ctrl_widget = ToggleSwitchSettings(ctrl_val)
+                ctrl_widget = ToggleSwitchSettings(settings_key=ctrl_val, default_checked=True)
             elif ctrl_type == "badge":
                 badge = QLabel(t(ctrl_val))
                 badge.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))

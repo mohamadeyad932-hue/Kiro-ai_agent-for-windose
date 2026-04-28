@@ -28,11 +28,14 @@ MODEL_PATH = os.path.join(BASE_DIR, "models", "sbert_high_res")
 HOME       = os.path.expanduser('~')
 OUTPUT_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Check if a custom path was passed as an argument
-if len(sys.argv) > 1 and os.path.isdir(sys.argv[1]):
-    print(f"[*] Custom path detected: {sys.argv[1]}")
+# Check if folder name and path were passed as arguments
+if len(sys.argv) > 2 and os.path.isdir(sys.argv[2]):
+    folder_name = sys.argv[1]
+    folder_path = sys.argv[2]
+    print(f"[*] Custom folder name: {folder_name}")
+    print(f"[*] Custom path detected: {folder_path}")
     FOLDERS = {
-        "custom_folder": sys.argv[1]
+        folder_name: folder_path
     }
 else:
     FOLDERS = {
@@ -43,12 +46,12 @@ else:
 
 # ─────────────── تحميل BERT ───────────────
 
-print("جاري تحميل نموذج BERT...")
+print("Loading BERT model...")
 device    = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, local_files_only=True)
 model     = AutoModel.from_pretrained(MODEL_PATH, local_files_only=True).to(device)
 model.eval()
-print(f"تم التحميل على: {device}\n")
+print(f"Loaded on: {device}\n")
 
 # ─────────────── دوال القراءة ───────────────
 
@@ -82,7 +85,7 @@ def scan_folder(path):
     """فحص مجلد وإرجاع جميع ملفاته باللواحق المحددة في قاموس."""
     files_dict = {}
     if not os.path.isdir(path):
-        print(f"  المسار غير موجود: {path}")
+        print(f"  Path not found: {path}")
         return files_dict
 
     try:
@@ -95,7 +98,7 @@ def scan_folder(path):
                 if ext in EXTENSIONS:
                     files_dict[name] = ext
     except PermissionError:
-        print(f"  لا توجد صلاحية: {path}")
+        print(f"  Permission denied: {path}")
 
     return files_dict
 
@@ -195,7 +198,7 @@ def save_vectors_script(folder_name, vectors):
     with open(script_path, 'w', encoding='utf-8') as f:
         f.write('\n'.join(lines))
     
-    print(f"\n  تم حفظ البصمات: {script_path}")
+    print(f"\n  Embeddings saved: {script_path}")
 
 # ─────────────── دورة التشغيل الرئيسية ───────────────
 
@@ -205,17 +208,18 @@ if __name__ == "__main__":
 
     for folder_name, folder_path in FOLDERS.items():
         print(f"\n{'='*50}")
-        print(f"جاري فحص ومعالجة: {folder_name}")
+        print(f"Scanning and processing: {folder_name}")
         print(f"{'='*50}")
 
         # 1. فحص المجلد وجمع الملفات
         files_dict = scan_folder(folder_path)
         if not files_dict:
+            print("  [!] No files found to process / لم يتم العثور على ملفات لمعالجتها")
             continue
         
         # حفظ قاموس أسماء الملفات (كما كان يفعل السكربت الأول)
         save_file_list_script(folder_name, files_dict)
-        print(f"📁 تم العثور على {len(files_dict)} ملف، جاري توليد البصمات...\n")
+        print(f"📁 Found {len(files_dict)} files, generating embeddings...\n")
 
         # 2. توليد البصمات
         folder_vectors = {}
@@ -225,17 +229,17 @@ if __name__ == "__main__":
             try:
                 text = READERS[ext](full_path)
             except PermissionError:
-                print(f"  ⚠ الملف قيد الاستخدام (مقفول)، تم تخطيه تلقائياً: {file_name}{ext}")
+                print(f"  ⚠ File is in use (locked), skipped automatically: {file_name}{ext}")
                 continue
             except FileNotFoundError:
-                print(f"  ⚠ اختفى الملف فجأة (ربما قمت بنقله أو حذفه للتو): {file_name}{ext}")
+                print(f"  ⚠ File disappeared suddenly (maybe moved or deleted): {file_name}{ext}")
                 continue
             except Exception as e:
-                print(f"  ⚠ خطأ في القراءة: {file_name}{ext} → {e}")
+                print(f"  ⚠ Error reading: {file_name}{ext} → {e}")
                 continue
             
             if not text.strip():
-                print(f"  ⚠ فارغ: {file_name}{ext}")
+                print(f"  ⚠ Empty: {file_name}{ext}")
                 continue
             
             # استخراج المتجه
@@ -253,7 +257,7 @@ if __name__ == "__main__":
 
     # ─────────────── ملخص نهائي ───────────────
     print(f"\n{'='*50}")
-    print(f"تم الانتهاء بنجاح! إجمالي البصمات المولّدة: {total_vectors}")
-    print("\nالقواميس المنشأة:")
+    print(f"Finished successfully! Total embeddings generated: {total_vectors}")
+    print("\nCreated dictionaries:")
     for key, vectors in vector_dicts.items():
-        print(f"  {key}_vectors → {len(vectors)} بصمة")
+        print(f"  {key}_vectors → {len(vectors)} embeddings")

@@ -311,7 +311,7 @@ def compare_thresholds(vectors, true_labels, base_threshold):
 def main():
     print("╔══════════════════════════════════════════════════════════════╗")
     print("║   تقييم دقة خوارزمية التجميع — مشروع Kiro AI               ║")
-    print("║   SBERT Embedding + Agglomerative Clustering Evaluation     ║")
+    print("║   SBERT Embedding + Agglomerative Clustering Evaluation arabic+english    ║")
     print("╚══════════════════════════════════════════════════════════════╝")
 
     bbc_root = sys.argv[1] if len(sys.argv) > 1 and os.path.isdir(sys.argv[1]) else BBC_ROOT
@@ -335,7 +335,7 @@ def main():
     # الفيكتورات من النماذج اللغوية تحتوي على ضوضاء رياضية.
     # تقليلها إلى 50 بُعد يصفي الضوضاء ويبرز المعالم القوية ويجعل الـ ARI و NMI يقفززون للأعلى.
     from sklearn.decomposition import PCA
-    n_pca = min(368, len(vectors), vectors.shape[1])
+    n_pca = min(384, len(vectors), vectors.shape[1])
     print(f"\n  [] تطبيق خفض الأبعاد (PCA) لتنظيف الفيكتورات (من {vectors.shape[1]} إلى {n_pca} بُعد)...")
     pca = PCA(n_components=n_pca, random_state=42)
     optimized_vectors = pca.fit_transform(vectors)

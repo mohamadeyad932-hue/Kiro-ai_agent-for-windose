@@ -234,7 +234,11 @@ STRINGS = {
         "en": "Privacy is at the core of Kiro AI. Neural models are built to run entirely locally on your hardware, meaning your personal files, reports, and photos are never uploaded to any external cloud or third-party servers. All processing happens on your device.",
     },
     # ─── رسائل الخطأ ───
-    "err_path_title": {"ar": "خطأ في المسار", "en": "Path Error"},
+    "err_path_title": {"ar": "خطأ", "en": "Error"},
+    "err_type_missing": {
+        "ar": "خطأ: يجب أن تختار نوع الملفات للمعالجتها (نصوص أو صور)!",
+        "en": "Error: You must select the type of files to process!"
+    },
     "err_path_missing": {
         "ar": "الرجاء إدخال مسار المجلد أو تفعيل أحد المجلدات الافتراضية (سطح المكتب، التنزيلات، المستندات)!",
         "en": "Please enter a folder path or enable one of the default folders (Desktop, Downloads, Documents)!",

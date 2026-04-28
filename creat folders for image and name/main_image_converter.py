@@ -45,22 +45,22 @@ BLIP_MODEL_PATH = os.path.join(BASE_DIR, "models", "blip-image-captioning-base")
 # ==========================================
 #          تحميل النماذج (Models)
 # ==========================================
-print(" جاري تحميل نماذج الذكاء الاصطناعي... (قد يستغرق بعض الوقت)")
+print(" Loading AI models... (This may take a while)")
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
-print(f"   [BLIP] باستخدام المعالج: {device}")
+print(f"   [BLIP] Using device: {device}")
 try:
     blip_processor = BlipProcessor.from_pretrained(BLIP_MODEL_PATH)
     blip_model = BlipForConditionalGeneration.from_pretrained(BLIP_MODEL_PATH).to(device)
 except Exception as e:
-    print(f" تعذر تحميل نموذج BLIP: {e}")
+    print(f" Failed to load BLIP model: {e}")
     import sys
     sys.exit(1)
 
-print("   [SBERT] جاري التحميل...")
+print("   [SBERT] Loading...")
 sbert_model = SentenceTransformer(SBERT_MODEL_PATH)
 
-print(" تم تحميل جميع النماذج بنجاح!\n")
+print(" All models loaded successfully!\n")
 
 # ==========================================
 #              دوال المعالجة
@@ -74,7 +74,7 @@ def generate_image_caption(image_path: str) -> str:
         caption = blip_processor.decode(out[0], skip_special_tokens=True)
         return caption
     except Exception as e:
-        print(f"  [!] خطأ أثناء استخراج وصف الصورة {os.path.basename(image_path)}: {e}")
+        print(f"  [!] Error generating caption for {os.path.basename(image_path)}: {e}")
         return ""
 
 def extract_candidates_tfidf(texts):
@@ -184,24 +184,24 @@ def save_metadata(group_name, folder_path, files_count):
 
 def process_image_clusters():
     if not os.path.exists(IMAGE_CLUSTERING_DIR):
-        print(f" مسار القواميس غير موجود: {IMAGE_CLUSTERING_DIR}")
+        print(f" Dictionaries path not found: {IMAGE_CLUSTERING_DIR}")
         return
 
-    print("جاري البحث في قواميس الصور...")
+    print("Searching in image dictionaries...")
     
     for filename in os.listdir(IMAGE_CLUSTERING_DIR):
         if not filename.endswith(".py"):
             continue
             
         file_path = os.path.join(IMAGE_CLUSTERING_DIR, filename)
-        print(f"\n{'='*50}\nمعالجة قاموس الصور: {filename}\n{'='*50}")
+        print(f"\n{'='*50}\nProcessing image dictionary: {filename}\n{'='*50}")
         
         spec = importlib.util.spec_from_file_location("module.name", file_path)
         foo = importlib.util.module_from_spec(spec)
         try:
             spec.loader.exec_module(foo)
         except Exception as e:
-            print(f" فشل في تحميل القاموس {filename}: {e}")
+            print(f" Failed to load dictionary {filename}: {e}")
             continue
         
         processed_any = False  #  تتبع هل تمت معالجة أي مجموعة
@@ -225,20 +225,26 @@ def process_image_clusters():
             valid_files = [f for f in paths if os.path.isfile(f)]
             
             if not valid_files:
-                print(f"     المجموعة '{var_name}': لا توجد ملفات صالحة (قد تكون المسارات خاطئة)")
+                print(f"     Group '{var_name}': No valid files found (paths might be incorrect)")
                 #  طباعة تشخيصية لمساعدتك في الكشف
                 for p in paths[:3]:
-                    print(f"      - مسار غير موجود: {p}")
+                    print(f"      - Path not found: {p}")
                 continue
                 
-            print(f"\n🔹 مجموعة: {var_name} ({len(valid_files)} صور)")
+            print(f"\n🔹 Group: {var_name} ({len(valid_files)} images)")
             
             parent_path = os.path.dirname(valid_files[0])
             
             # الخطوة 1: توليد الأوصاف
             captions = []
-            print("   جاري قراءة الصور وتوليد الأوصاف (Image Captioning)...")
-            for f in valid_files:
+            print("   Reading images and generating captions...")
+            
+            files_to_caption = valid_files
+            if len(valid_files) > 75:
+                print(f"   [!] Large group ({len(valid_files)} images). Captioning only first 70 for naming.")
+                files_to_caption = valid_files[:70]
+                
+            for f in files_to_caption:
                 cap = generate_image_caption(f)
                 if cap.strip():
                     captions.append(cap)
@@ -247,10 +253,10 @@ def process_image_clusters():
             # الخطوة 2: التسمية الدلالية
             if not captions:
                 label = f"Unknown_Images_{var_name}"
-                print(f" لم يُولَّد أي وصف، سيُستخدم الاسم الافتراضي: {label}")
+                print(f" No captions generated, using default name: {label}")
             else:
                 label = get_semantic_image_label(captions)
-                print(f" الاسم الدلالي المختار: {label}")
+                print(f" Chosen semantic name: {label}")
                 
             target_folder = os.path.join(parent_path, label)
             
@@ -261,7 +267,7 @@ def process_image_clusters():
                 target_folder = f"{original_target}_{counter}"
                 counter += 1
                 
-            print(f" إنشاء المجلد: {target_folder}")
+            print(f" Creating folder: {target_folder}")
             os.makedirs(target_folder, exist_ok=True)
             
             # الخطوة 4: نقل الصور
@@ -280,9 +286,9 @@ def process_image_clusters():
                     shutil.move(f, dest_path)
                     success += 1
                 except Exception as e:
-                    print(f" فشل في نقل {fname}: {e}")
+                    print(f" Failed to move {fname}: {e}")
                     
-            print(f" تم نقل {success}/{len(valid_files)} صورة بنجاح.")
+            print(f" Successfully moved {success}/{len(valid_files)} images.")
             # حفظ المعلومات للداشبورد
             save_metadata(label, target_folder, success)
             processed_any = True
@@ -291,4 +297,4 @@ def process_image_clusters():
 if __name__ == '__main__':
     import time
     process_image_clusters()
-    print("\n🎉 تم الانتهاء من تصنيف ونقل جميع الصور!")
+    print("\n🎉 Finished classifying and moving all images!")

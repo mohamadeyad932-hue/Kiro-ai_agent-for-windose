@@ -1,14 +1,14 @@
 """
-IMBADING_IMAG.py — تقييم دقة خوارزمية التجميع على الصور (v2.1 مُصلَّحة)
+IMBADING_IMAG.py — Image Clustering Accuracy Evaluation (v2.1 fixed)
 ======================================================================================
-التحسينات:
-  ✅ دعم --fresh لتجاهل الكاش
-  ✅ عمود Correct يعكس دقة الصورة داخل مجموعتها
-  ✅ حذف التحقق الزائف من ground_truth
-  ✅ اختيار العتبة باستخدام V-Measure فقط
-  ✅ عدد الفئات الحقيقية يُحسب تلقائياً
-  ✅ ترقيم موحّد للخطوات
-  ✅ معالجة دفعات سريعة (batch size 16)
+Improvements:
+  ✅ Support --fresh to ignore cache
+  ✅ Correct column reflects image accuracy within its group
+  ✅ Removed false ground_truth verification
+  ✅ Threshold selection using V-Measure only
+  ✅ Number of real categories calculated automatically
+  ✅ Unified step numbering
+  ✅ Fast batch processing (batch size 16)
 """
 
 import os
@@ -21,7 +21,7 @@ import pandas as pd
 
 sys.stdout.reconfigure(encoding="utf-8")
 
-# ─────────────── المكتبات المطلوبة ───────────────
+# ─────────────── Required Libraries ───────────────
 os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '1'
 os.environ['OMP_NUM_THREADS'] = '1'
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
@@ -57,15 +57,14 @@ except ImportError:
     sys.exit(1)
 
 # ═══════════════════════════════════════════════════════════════
-# ─────────────── الإعدادات — عدّل هذه فقط ───────────────
+# ─────────────── Settings — Modify These Only ───────────────
 # ═══════════════════════════════════════════════════════════════
 
-CSV_PATH = r"C:\Kiro-Project\metadata\ground_truth.csv"
-IMAGES_ROOT = r"C:\Kiro-Project\archive\natural_images"
-CLIP_MODEL = "openai/clip-vit-base-patch32"
-
-DISTANCE_THRESHOLD = None       # None = اكتشاف تلقائي
-EVALUATION_MODE = 'full_data'   
+CSV_PATH = r"E:\data\ground_truth.csv"
+IMAGES_ROOT = r"E:\data\archive\natural_images"
+CLIP_MODEL = r"C:\Users\eyad\Desktop\Kiro-ai_agent-for-windose\models\clip_local_model"
+DISTANCE_THRESHOLD = None       # None = Auto-detect
+EVALUATION_MODE = 'full_data'   # 'train_test' or 'full_data'
 
 CACHE_DIR = os.path.dirname(os.path.abspath(__file__))
 VECTORS_CACHE_PATH = os.path.join(CACHE_DIR, "cached_vectors.npy")
@@ -75,7 +74,7 @@ NAMES_CACHE_PATH   = os.path.join(CACHE_DIR, "cached_names.npy")
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".bmp", ".webp", ".tiff", ".tif"}
 
 # ═══════════════════════════════════════════════════════════════
-# 🔧 دالة: كشف إعدادات الـ CSV تلقائياً
+# 🔧 Function: Auto-detect CSV Settings
 # ═══════════════════════════════════════════════════════════════
 
 def detect_csv_config(csv_path):
@@ -95,22 +94,22 @@ def detect_csv_config(csv_path):
                     return h
         return None
 
-    col_name = find_col(["Image_Name", "image_name", "filename", "اسم الملف", "name", "file"])
-    col_label = find_col(["Label", "label", "category", "Category", "نوع الملف", "class", "Class"])
-    col_fullpath = find_col(["Full_Path", "full_path", "path", "Path", "المسار"])
+    col_name = find_col(["Image_Name", "image_name", "filename", "File Name", "name", "file"])
+    col_label = find_col(["Label", "label", "category", "Category", "File Type", "class", "Class"])
+    col_fullpath = find_col(["Full_Path", "full_path", "path", "Path", "Path"])
 
     return delimiter, col_name, col_label, col_fullpath
 
 # ═══════════════════════════════════════════════════════════════
-# المرحلة 1 — قراءة الـ CSV وبناء قائمة الصور
+# Phase 1 — Read CSV and Build Image List
 # ═══════════════════════════════════════════════════════════════
 
 def load_image_paths(csv_path, images_root):
-    print(f"\n[1/4] قراءة الداتا سيت: {csv_path}")
+    print(f"\n[1/4] Reading Dataset: {csv_path}")
     delimiter, col_name, col_label, col_fullpath = detect_csv_config(csv_path)
 
     if col_name is None or col_label is None:
-        print("❌ تعذر تحديد الأعمدة.")
+        print("❌ Could not identify columns.")
         sys.exit(1)
 
     image_paths, true_labels, file_names = [], [], []
@@ -120,7 +119,7 @@ def load_image_paths(csv_path, images_root):
         reader = csv.DictReader(f, delimiter=delimiter)
         rows = [{k.strip(): v.strip() for k, v in row.items()} for row in reader]
 
-    print(f"  → عدد السجلات: {len(rows)}")
+    print(f"  → Number of records: {len(rows)}")
 
     for row in rows:
         label = row.get(col_label, "").strip()
@@ -153,27 +152,27 @@ def load_image_paths(csv_path, images_root):
         true_labels.append(label)
         file_names.append(f"{label}/{img_name}")
 
-    print(f"  ✓ صور محملة: {len(image_paths)}")
+    print(f"  ✓ Images loaded: {len(image_paths)}")
     if skipped:
-        print(f"  ⚠ سجلات تم تخطيها: {skipped}")
+        print(f"  ⚠ Records skipped: {skipped}")
     if not image_paths:
-        print("❌ لم يتم العثور على صور!")
+        print("❌ No images found!")
         sys.exit(1)
 
     counts = Counter(true_labels)
-    print(f"\n  توزيع الفئات:")
+    print(f"\n  Category Distribution:")
     for lbl, cnt in sorted(counts.items()):
-        print(f"    {lbl}: {cnt} صورة")
+        print(f"    {lbl}: {cnt} images")
     return image_paths, true_labels, file_names
 
 # ═══════════════════════════════════════════════════════════════
-# المرحلة 2 — استخراج بصمات CLIP
+# Phase 2 — Extract CLIP Embeddings
 # ═══════════════════════════════════════════════════════════════
 
 def extract_clip_embeddings(image_paths, clip_model_name):
-    print(f"\n[2/4] تحميل CLIP: {clip_model_name}")
+    print(f"\n[2/4] Loading CLIP: {clip_model_name}")
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    print(f"  🖥️  الجهاز: {device}")
+    print(f"  🖥️  Device: {device}")
 
     model = CLIPModel.from_pretrained(clip_model_name)
     processor = CLIPProcessor.from_pretrained(clip_model_name)
@@ -192,7 +191,7 @@ def extract_clip_embeddings(image_paths, clip_model_name):
                 batch_images.append(img)
                 batch_valid.append(path)
             except Exception as e:
-                print(f"  ⚠ خطأ في {os.path.basename(path)}: {e}")
+                print(f"  ⚠ Error in {os.path.basename(path)}: {e}")
 
         if not batch_images:
             continue
@@ -210,10 +209,10 @@ def extract_clip_embeddings(image_paths, clip_model_name):
             torch.cuda.empty_cache()
 
         if batch_idx % (batch_size * 10) == 0:
-            print(f"  → {min(batch_idx+batch_size, len(image_paths))}/{len(image_paths)} صورة...")
+            print(f"  → {min(batch_idx+batch_size, len(image_paths))}/{len(image_paths)} images...")
 
     embeddings = np.array(embeddings, dtype=np.float32)
-    print(f"  ✓ بصمات: {embeddings.shape}")
+    print(f"  ✓ Embeddings: {embeddings.shape}")
     del model, processor
     gc.collect()
     if device == "cuda":
@@ -221,33 +220,33 @@ def extract_clip_embeddings(image_paths, clip_model_name):
     return embeddings, valid_paths
 
 # ═══════════════════════════════════════════════════════════════
-# كاش
+# Cache
 # ═══════════════════════════════════════════════════════════════
 
 def save_cache(vectors, true_labels, file_names):
     np.save(VECTORS_CACHE_PATH, vectors)
     np.save(LABELS_CACHE_PATH, np.array(true_labels, dtype=object))
     np.save(NAMES_CACHE_PATH, np.array(file_names, dtype=object))
-    print(f"  💾 كاش محفوظ ({len(true_labels)} عنصر)")
+    print(f"  💾 Cache saved ({len(true_labels)} items)")
 
 def load_cache(skip_cache=False):
     if skip_cache:
-        print("  ⚠️  تم تجاهل الكاش (--fresh)")
+        print("  ⚠️  Cache ignored (--fresh)")
         return None, None, None
     if all(os.path.isfile(p) for p in [VECTORS_CACHE_PATH, LABELS_CACHE_PATH, NAMES_CACHE_PATH]):
         vectors = np.load(VECTORS_CACHE_PATH)
         true_labels = np.load(LABELS_CACHE_PATH, allow_pickle=True).tolist()
         file_names = np.load(NAMES_CACHE_PATH, allow_pickle=True).tolist()
-        print(f"  ✅ كاش مُحمَّل ({len(true_labels)} صورة)")
+        print(f"  ✅ Cache loaded ({len(true_labels)} images)")
         return vectors, true_labels, file_names
     return None, None, None
 
 # ═══════════════════════════════════════════════════════════════
-# اكتشاف أفضل عتبة (V-Measure فقط)
+# Best Threshold Selection (V-Measure only)
 # ═══════════════════════════════════════════════════════════════
 
 def get_best_threshold(vectors_train, true_labels_train):
-    print(f"\n  🔍 البحث عن أفضل عتبة (V-Measure) على مجموعة التدريب...")
+    print(f"\n  🔍 Searching for best threshold (V-Measure) on training set...")
     Z = linkage(vectors_train, method="average", metric="cosine")
     distances = Z[:, 2]
     candidates = np.linspace(distances.min(), distances.max(), 50)
@@ -264,20 +263,20 @@ def get_best_threshold(vectors_train, true_labels_train):
             results.append((thr, n_clusters, v_meas))
 
     if not results:
-        print("  ⚠ استخدام العتبة الافتراضية 0.35")
+        print("  ⚠ Using default threshold 0.35")
         return 0.35
 
-    results.sort(key=lambda x: x[2], reverse=True)  # ترتيب تنازلي حسب V-Measure
+    results.sort(key=lambda x: x[2], reverse=True)  # Sort descending by V-Measure
     best_thr = results[0][0]
-    print(f"  ✅ أفضل عتبة: {best_thr:.4f} (V-Measure={results[0][2]*100:.1f}%)")
+    print(f"  ✅ Best threshold: {best_thr:.4f} (V-Measure={results[0][2]*100:.1f}%)")
     return round(best_thr, 4)
 
 # ═══════════════════════════════════════════════════════════════
-# التجميع (بدون رقم خطوة داخلي)
+# Clustering
 # ═══════════════════════════════════════════════════════════════
 
 def cluster_vectors(vectors, distance_threshold):
-    print(f"  → التجميع الهرمي (عتبة={distance_threshold})...")
+    print(f"  → Hierarchical clustering (threshold={distance_threshold})...")
     clustering = AgglomerativeClustering(
         n_clusters=None,
         distance_threshold=distance_threshold,
@@ -286,15 +285,15 @@ def cluster_vectors(vectors, distance_threshold):
     )
     predicted = clustering.fit_predict(vectors)
     n_clusters = len(set(predicted))
-    print(f"  ✓ عدد المجموعات: {n_clusters}")
+    print(f"  ✓ Number of clusters: {n_clusters}")
     return predicted, n_clusters
 
 # ═══════════════════════════════════════════════════════════════
-# التقييم (بدون رقم خطوة داخلي)
+# Evaluation
 # ═══════════════════════════════════════════════════════════════
 
 def evaluate_clustering(true_labels, predicted_labels, file_names):
-    print(f"\n  📊 حساب مقاييس التجميع...")
+    print(f"\n  📊 Calculating clustering metrics...")
     label_to_id = {l: i for i, l in enumerate(sorted(set(true_labels)))}
     true_ids = np.array([label_to_id[l] for l in true_labels])
 
@@ -304,7 +303,7 @@ def evaluate_clustering(true_labels, predicted_labels, file_names):
     comp = completeness_score(true_ids, predicted_labels)
     v_meas = v_measure_score(true_ids, predicted_labels)
 
-    # حساب النقاء
+    # Purity calculation
     cluster_to_true = defaultdict(list)
     for tl, pl in zip(true_labels, predicted_labels):
         cluster_to_true[pl].append(tl)
@@ -319,30 +318,31 @@ def evaluate_clustering(true_labels, predicted_labels, file_names):
     print(f"    Completeness     : {comp*100:.2f}%")
     print(f"    V-Measure        : {v_meas*100:.2f}%")
 
-    # حفظ النتائج مع عمود Correct الصحيح
+    # Save results with correct Correct column
     save_results_to_csv(true_labels, predicted_labels, file_names, cluster_to_true)
 
     return {"purity": purity, "ari": ari, "nmi": nm,
             "homogeneity": homo, "completeness": comp, "v_measure": v_meas}
 
 # ═══════════════════════════════════════════════════════════════
-# 💾 حفظ النتائج مع تصحيح عمود "Correct"
+# 💾 Save Results with Corrected "Correct" Column
 # ═══════════════════════════════════════════════════════════════
 
 def save_results_to_csv(true_labels, predicted_labels, file_names, cluster_to_true):
-    # إنشاء تعيين: لكل مجموعة → التسمية السائدة
+    # Create mapping: cluster_id → majority label
     cluster_majority = {}
     for cluster_id, labels in cluster_to_true.items():
         majority_label = Counter(labels).most_common(1)[0][0]
         cluster_majority[cluster_id] = majority_label
 
-    # لكل صورة: هل تسميتها الحقيقية تساوي تسمية المجموعة؟
+    # For each image: is its true label equal to the cluster's majority label?
     correct_flags = [
         true_labels[i] == cluster_majority[predicted_labels[i]]
         for i in range(len(true_labels))
     ]
 
     output_csv = os.path.join(os.path.dirname(__file__), "metadata", "clustered_results.csv")
+    os.makedirs(os.path.dirname(output_csv), exist_ok=True)
     df = pd.DataFrame({
         "File_Name": file_names,
         "True_Label": true_labels,
@@ -351,25 +351,25 @@ def save_results_to_csv(true_labels, predicted_labels, file_names, cluster_to_tr
         "Correct": correct_flags
     })
     df.to_csv(output_csv, index=False, encoding='utf-8-sig')
-    print(f"  💾 تم حفظ التفاصيل في: {output_csv}")
+    print(f"  💾 Details saved to: {output_csv}")
 
 # ═══════════════════════════════════════════════════════════════
-# التشغيل الرئيسي
+# Main Execution
 # ═══════════════════════════════════════════════════════════════
 
 def main():
-    # ── كشف --fresh من وسائط سطر الأوامر ──
+    # ── Detect --fresh from command line arguments ──
     skip_cache = '--fresh' in sys.argv
     if skip_cache:
-        sys.argv.remove('--fresh')  # تجنب التعارض مع argument الآخر
+        sys.argv.remove('--fresh')  # Avoid conflict with other arguments
 
     print("╔══════════════════════════════════════════════════════════════╗")
-    print("║   تقييم دقة خوارزمية التجميع — مشروع Kiro AI (v2.1)        ║")
+    print("║   Clustering Accuracy Evaluation — Kiro AI Project (v2.1)    ║")
     print("╚══════════════════════════════════════════════════════════════╝")
 
     images_root = sys.argv[1] if len(sys.argv) > 1 and os.path.isdir(sys.argv[1]) else IMAGES_ROOT
 
-    # ── تحميل الكاش أو المعالجة ──
+    # ── Load Cache or Process ──
     vectors, true_labels, file_names = load_cache(skip_cache)
 
     if vectors is None:
@@ -377,7 +377,7 @@ def main():
         vectors, valid_paths = extract_clip_embeddings(image_paths, CLIP_MODEL)
 
         if len(vectors) == 0:
-            print("❌ فشل استخراج البصمات")
+            print("❌ Failed to extract embeddings")
             sys.exit(1)
 
         path_to_label = dict(zip(image_paths, true_labels))
@@ -386,26 +386,26 @@ def main():
         file_names = [path_to_name[p] for p in valid_paths]
         save_cache(vectors, true_labels, file_names)
 
-    # عدد الفئات الحقيقي
+    # Number of real categories
     num_true_categories = len(set(true_labels))
-    print(f"  📊 عدد الفئات الحقيقية: {num_true_categories}")
+    print(f"  📊 Number of real categories: {num_true_categories}")
 
-    # ── اختيار MODE ──
+    # ── Select MODE ──
     if EVALUATION_MODE == 'full_data':
-        print("\n═══ MODE: FULL DATA (تقييم مباشر) ═══")
+        print("\n═══ MODE: FULL DATA (Direct Evaluation) ═══")
         vectors_all = vectors
         labels_all = true_labels
         names_all = file_names
 
         # [3/4] PCA
         n_pca = min(128, len(vectors_all), vectors_all.shape[1])
-        print(f"\n[3/4] تقليل الأبعاد (PCA): {vectors_all.shape[1]} → {n_pca}")
+        print(f"\n[3/4] Dimensionality Reduction (PCA): {vectors_all.shape[1]} → {n_pca}")
         pca = PCA(n_components=n_pca, random_state=42)
         vectors_all = pca.fit_transform(vectors_all)
-        print(f"  ✓ الشكل بعد PCA: {vectors_all.shape}")
+        print(f"  ✓ Shape after PCA: {vectors_all.shape}")
 
-        # [4/4] اختيار العتبة والتجميع
-        print(f"\n[4/4] تحديد العتبة والتجميع:")
+        # [4/4] Threshold selection and clustering
+        print(f"\n[4/4] Threshold selection and clustering:")
         if DISTANCE_THRESHOLD is None:
             final_thr = get_best_threshold(vectors_all, labels_all)
         else:
@@ -416,17 +416,56 @@ def main():
 
         accuracy = results["purity"] * 100
         print("\n" + "─"*50)
-        print("  📈 النتيجة النهائية (كل البيانات):")
-        print(f"  عدد الصور: {len(labels_all)}")
-        print(f"  عدد المجموعات: {n_clusters}")
-        print(f"  العتبة: {final_thr:.4f}")
+        print("  📈 Final Result (Full Data):")
+        print(f"  Number of images: {len(labels_all)}")
+        print(f"  Number of clusters: {n_clusters}")
+        print(f"  Threshold: {final_thr:.4f}")
         print(f"  ╔════════════════════════════════╗")
-        print(f"  ║   دقة التجميع (Purity): {accuracy:.2f}%   ║")
+        print(f"  ║   Clustering Accuracy (Purity): {accuracy:.2f}%   ║")
         print(f"  ╚════════════════════════════════╝")
 
-    
+    else:   # train_test
+        print("\n═══ MODE: TRAIN/TEST SPLIT (Training and Testing) ═══")
+        indices = np.arange(len(vectors))
+        train_idx, test_idx = train_test_split(
+            indices, test_size=0.2, random_state=42, stratify=true_labels
+        )
+        vectors_train = vectors[train_idx]
+        vectors_test = vectors[test_idx]
+        labels_train = [true_labels[i] for i in train_idx]
+        labels_test = [true_labels[i] for i in test_idx]
+        names_test = [file_names[i] for i in test_idx]
+
+        # PCA
+        n_pca = min(128, len(vectors_train), vectors_train.shape[1])
+        print(f"\n[3/4] PCA on Training: {vectors_train.shape[1]} → {n_pca}")
+        pca = PCA(n_components=n_pca, random_state=42)
+        vectors_train = pca.fit_transform(vectors_train)
+        vectors_test = pca.transform(vectors_test)
+
+        # Threshold
+        if DISTANCE_THRESHOLD is None:
+            final_thr = get_best_threshold(vectors_train, labels_train)
+        else:
+            final_thr = DISTANCE_THRESHOLD
+
+        # [4/4] Clustering on test data
+        print(f"\n[4/4] Clustering test data:")
+        predicted_test, n_clusters = cluster_vectors(vectors_test, final_thr)
+        results = evaluate_clustering(labels_test, predicted_test, names_test)
+
+        accuracy = results["purity"] * 100
+        print("\n" + "─"*50)
+        print("  📈 Final Result (Test Set):")
+        print(f"  Number of images: {len(labels_test)}")
+        print(f"  Number of clusters: {n_clusters}")
+        print(f"  Threshold: {final_thr:.4f}")
+        print(f"  ╔════════════════════════════════╗")
+        print(f"  ║   Clustering Accuracy (Purity): {accuracy:.2f}%   ║")
+        print(f"  ╚════════════════════════════════╝")
+
     gc.collect()
-    print("\n✅ انتهت المعالجة بنجاح!")
+    print("\n✅ Processing completed successfully!")
 
 if __name__ == "__main__":
     main()
