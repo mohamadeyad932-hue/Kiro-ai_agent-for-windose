@@ -3,6 +3,7 @@ import os
 import sys
 import time
 import argparse
+import shutil
 
 # Force UTF-8 encoding safely
 if hasattr(sys.stdout, 'reconfigure'):
@@ -13,6 +14,24 @@ elif sys.stdout.encoding != 'UTF-8':
         sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
     except:
         pass
+
+
+def _get_python_executable():
+    """Find the real Python interpreter, not the frozen exe."""
+    if not getattr(sys, 'frozen', False):
+        return sys.executable
+    app_dir = os.path.dirname(sys.executable)
+    local_python = os.path.join(app_dir, "python.exe")
+    if os.path.isfile(local_python):
+        return local_python
+    for base in [app_dir, os.path.dirname(app_dir)]:
+        venv_python = os.path.join(base, "venv", "Scripts", "python.exe")
+        if os.path.isfile(venv_python):
+            return venv_python
+    python_in_path = shutil.which("python")
+    if python_in_path:
+        return python_in_path
+    return sys.executable
 
 
 def run_script(dir_name, script_name, description, folder_name=None, folder_path=None):
@@ -29,20 +48,23 @@ def run_script(dir_name, script_name, description, folder_name=None, folder_path
     
     try:
         # Prepare command
-        command = [sys.executable, "-u", script_name]
+        command = [_get_python_executable(), "-u", script_name]
         if folder_name:
             command.append(folder_name)
         if folder_path:
             command.append(folder_path)
             print(f"[*] Targeting Folder: {folder_name} ({folder_path})")
 
+        # CREATE_NO_WINDOW prevents black console windows when running as exe
+        creation_flags = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
         process = subprocess.Popen(command, 
                                    cwd=dir_name,
                                    stdout=subprocess.PIPE, 
                                    stderr=subprocess.STDOUT,
                                    text=True,
                                    encoding='utf-8',
-                                   errors='replace')
+                                   errors='replace',
+                                   creationflags=creation_flags)
         
         # Read output line by line and print it to our stdout
         if process.stdout:
@@ -104,7 +126,7 @@ def select_paths():
             
     return paths
 
-def execute_pipeline(mode_choice, target_paths):
+def execute_pipeline(mode_choice, target_paths, nested=False):
     """Executes the processing pipeline for the given mode and paths"""
     start_time = time.time()
     
@@ -128,8 +150,20 @@ def execute_pipeline(mode_choice, target_paths):
     print(f"{'='*50}")
     if mode_choice in ['1', '2']:
         run_script("creat folders for flie_text  and name", "semantic_folder_creator.py", "Final Text Organization")
+        # إذا كان المستخدم فعّل المجلدات المتداخلة، نشغل التقسيم الفرعي للنصوص
+        if nested:
+            print(f"\n{'='*50}")
+            print(f"[*] SUB-CLUSTERING: Creating nested folders for text files...")
+            print(f"{'='*50}")
+            run_script("creat folders for flie_text  and name", "sub_cluster_text.py", "Text Sub-Clustering (Nested Folders)")
     if mode_choice in ['1', '3']:
         run_script("creat folders for image and name", "main_image_converter.py", "Final Image Organization")
+        # إذا كان المستخدم فعّل المجلدات المتداخلة، نشغل التقسيم الفرعي للصور
+        if nested:
+            print(f"\n{'='*50}")
+            print(f"[*] SUB-CLUSTERING: Creating nested folders for images...")
+            print(f"{'='*50}")
+            run_script("creat folders for image and name", "sub_cluster_images.py", "Image Sub-Clustering (Nested Folders)")
 
     elapsed = time.time() - start_time
     print(f"\n{'-'*50}")
@@ -181,7 +215,7 @@ def interactive_mode():
             continue
         
         # Execute
-        execute_pipeline(mode_choice, target_paths)
+        execute_pipeline(mode_choice, target_paths, nested=False)
         
         input("\nPress Enter to return to menu...")
 
@@ -214,7 +248,7 @@ def cli_mode(args):
     print(f"\n[*] Mode: {args.mode.upper()}")
     print(f"[*] Paths: {', '.join(target_paths.values())}")
     
-    execute_pipeline(mode_choice, target_paths)
+    execute_pipeline(mode_choice, target_paths, nested=args.nested)
 
 def main():
     parser = argparse.ArgumentParser(
@@ -238,6 +272,8 @@ Examples:
                         help='Include Downloads folder')
     parser.add_argument('--path', action='append', metavar='FOLDER',
                         help='Custom folder path (can be used multiple times)')
+    parser.add_argument('--nested', action='store_true',
+                        help='Enable nested folders (sub-clustering for deeper organization)')
     
     args = parser.parse_args()
     

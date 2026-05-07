@@ -3,7 +3,11 @@
 توليد تلقائي
 """
 
-# جميع الملفات ذات اللواحق المستهدفة (1 ملف)
+# جميع الملفات ذات اللواحق المستهدفة (5 ملف)
 custom_1_file = {
+    "3-Denevait-Hartenberg (1)": ".pdf",
+    "Flutter": ".pdf",
+    "Good morning everyone": ".docx",
+    "cv_eyad": ".pdf",
     "~$شاء مجلد اسمه convert gropss": ".docx",
 }

@@ -6,7 +6,40 @@ import math
 import os
 import sys
 import subprocess
+import shutil
 from datetime import datetime
+
+
+def _get_python_executable():
+    """إيجاد مسار Python الحقيقي - ليس ملف exe المجمّد.
+    عند تحويل المشروع بـ PyInstaller يصبح sys.executable يشير إلى main.exe
+    مما يسبب فتح التطبيق من جديد بدلاً من تشغيل السكريبتات.
+    """
+    # إذا لم يكن التطبيق مجمّداً (frozen)، استخدم sys.executable عادياً
+    if not getattr(sys, 'frozen', False):
+        return sys.executable
+
+    # ── التطبيق مجمّد (frozen) - ابحث عن Python الحقيقي ──
+    # 1) تحقق من وجود python.exe داخل مجلد التطبيق المجمّع (مُضمّن مع PyInstaller)
+    app_dir = os.path.dirname(sys.executable)
+    local_python = os.path.join(app_dir, "python.exe")
+    if os.path.isfile(local_python):
+        return local_python
+
+    # 2) ابحث في البيئة الافتراضية venv بجانب المشروع
+    # عند التوزيع: dist/main/ يحتوي على exe، والمشروع الأصلي بجانبه
+    for base in [app_dir, os.path.dirname(app_dir)]:
+        venv_python = os.path.join(base, "venv", "Scripts", "python.exe")
+        if os.path.isfile(venv_python):
+            return venv_python
+
+    # 3) ابحث في PATH عن python.exe عادي
+    python_in_path = shutil.which("python")
+    if python_in_path:
+        return python_in_path
+
+    # 4) آخر خيار: أعد sys.executable (سيفشل لكن على الأقل سيظهر خطأ واضح)
+    return sys.executable
 
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
                               QFrame, QScrollArea, QTextEdit, QProgressBar)
@@ -31,16 +64,18 @@ class PipelineWorker(QThread):
     phase_signal  = pyqtSignal(int)        # رقم المرحلة (0-3)
     finished_signal = pyqtSignal(bool, str)  # (نجح؟, رسالة الخطأ)
 
-    def __init__(self, target_paths: list, mode: str, base_dir: str, parent=None):
+    def __init__(self, target_paths: list, mode: str, base_dir: str, nested_folders: bool = False, parent=None):
         """
         target_paths : قائمة المسارات المختارة من شاشة التهيئة
         mode         : 'all' | 'text' | 'images'
         base_dir     : المجلد الجذر للمشروع (حيث توجد سكريبتات run_project.py)
+        nested_folders : هل يتم تفعيل المجلدات المتداخلة
         """
         super().__init__(parent)
         self.target_paths = target_paths
         self.mode = mode
         self.base_dir = base_dir
+        self.nested_folders = nested_folders
         self._abort = False
 
     def abort(self):
@@ -55,12 +90,14 @@ class PipelineWorker(QThread):
             self.log_signal.emit(f"[!] File not found: {script_path}")
             return False
 
-        command = [sys.executable, "-u", script_name]
+        command = [_get_python_executable(), "-u", script_name]
         if custom_path:
             command.append(custom_path)
             self.log_signal.emit(f"[*] Path: {custom_path}")
 
         try:
+            # CREATE_NO_WINDOW يمنع ظهور الشاشة السوداء عند التشغيل كـ exe
+            creation_flags = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
             process = subprocess.Popen(
                 command,
                 cwd=script_dir,
@@ -69,6 +106,7 @@ class PipelineWorker(QThread):
                 text=True,
                 encoding="utf-8",
                 errors="replace",
+                creationflags=creation_flags,
             )
             if process.stdout:
                 for line in process.stdout:
@@ -160,12 +198,16 @@ class PipelineWorker(QThread):
                 parent_dir = os.path.dirname(self.base_dir)
                 script_path = os.path.join(parent_dir, "run_project.py")
 
-            command = [sys.executable, "-u", script_path, "--mode", self.mode]
+            command = [_get_python_executable(), "-u", script_path, "--mode", self.mode]
+            if self.nested_folders:
+                command.append("--nested")
             for p in self.target_paths:
                 command.extend(["--path", p])
 
             self.log_signal.emit(f"[*] Command: {' '.join(command)}")
             
+            # CREATE_NO_WINDOW يمنع ظهور الشاشة السوداء عند التشغيل كـ exe
+            creation_flags = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
             process = subprocess.Popen(
                 command,
                 cwd=os.path.dirname(script_path),
@@ -175,7 +217,8 @@ class PipelineWorker(QThread):
                 encoding="utf-8",
                 errors="replace",
                 bufsize=1, # Line buffered
-                env=env
+                env=env,
+                creationflags=creation_flags,
             )
 
             if process.stdout:
@@ -444,11 +487,12 @@ class ProcessingScreen(QWidget):
 
     # ─── واجهة عامة ───
 
-    def start_processing(self, target_paths: list = None, mode: str = "all"):
+    def start_processing(self, target_paths: list = None, mode: str = "all", nested_folders: bool = False):
         """
         استدعاء من main.py عند الانتقال لشاشة المعالجة.
-        target_paths : قائمة المسارات المختارة
-        mode         : 'all' | 'text' | 'images'
+        target_paths    : قائمة المسارات المختارة
+        mode            : 'all' | 'text' | 'images'
+        nested_folders  : تفعيل المجلدات المتداخلة
         """
         self._reset()
 
@@ -475,7 +519,7 @@ class ProcessingScreen(QWidget):
         self.progress.setRange(0, 0)
         self.pct_label.setText("") 
 
-        self._worker = PipelineWorker(target_paths, mode, base_dir)
+        self._worker = PipelineWorker(target_paths, mode, base_dir, nested_folders)
         self._worker.log_signal.connect(self._log)
         self._worker.progress_signal.connect(self._on_progress)
         self._worker.phase_signal.connect(self._on_phase)

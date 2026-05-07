@@ -218,8 +218,8 @@ class DashboardScreen(QWidget):
             self._stat_widgets[1]['val'].setText(time_str)
             self._stat_widgets[1]['sub'].setText("Actual processing time")
 
-            text_files = sum(f.get("files_count", 0) for f in valid_folders if f.get("type") == "text")
-            visual_files = sum(f.get("files_count", 0) for f in valid_folders if f.get("type") == "image")
+            text_files = sum(f.get("files_count", 0) for f in valid_folders if f.get("type") in ("text", "text_sub"))
+            visual_files = sum(f.get("files_count", 0) for f in valid_folders if f.get("type") in ("image", "image_sub"))
             
             self._stat_widgets[2]['val'].setText(str(text_files))
             self._stat_widgets[2]['sub'].setText(t("dash_stat3_sub"))
@@ -238,10 +238,10 @@ class DashboardScreen(QWidget):
             
             for f_data in valid_folders:
                 path = f_data.get("folder_path", "")
-                # نستخدم اسم المجلد الفعلي من القرص
                 display_name = os.path.basename(path).replace("_", " ").title()
                 count = f_data.get("files_count", 0)
-                self._add_folder_row(display_name, f"{count} {t('dash_files_suffix')}")
+                is_sub = f_data.get("type") in ("image_sub", "text_sub")
+                self._add_folder_row(display_name, f"{count} {t('dash_files_suffix')}", is_sub=is_sub)
 
         except Exception as e:
             print(f"Error updating dashboard: {e}")
@@ -273,7 +273,7 @@ class DashboardScreen(QWidget):
             if item.widget():
                 item.widget().deleteLater()
 
-    def _add_folder_row(self, name, count_text):
+    def _add_folder_row(self, name, count_text, is_sub=False):
         sep = QFrame(); sep.setFixedHeight(1)
         sep.setStyleSheet(f"background-color: rgba(0, 0, 0, 0.06); border: none;")
         self.folders_layout.addWidget(sep)
@@ -281,13 +281,19 @@ class DashboardScreen(QWidget):
         row = QWidget()
         row.setStyleSheet("background: transparent;")
         r_layout = QHBoxLayout(row)
-        r_layout.setContentsMargins(20, 12, 20, 12)
+        # مسافة بادئة للمجلدات الفرعية
+        left_margin = 50 if is_sub else 20
+        r_layout.setContentsMargins(left_margin, 12, 20, 12)
+
+        # لون مختلف للمجلدات الفرعية
+        badge_bg = f"rgba(245, 158, 11, 0.15)" if is_sub else f"rgba(16, 185, 129, 0.15)"
+        badge_color = AMBER if is_sub else EMERALD
 
         count_badge = QLabel(count_text)
         count_badge.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
         count_badge.setFixedSize(90, 28)
         count_badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        count_badge.setStyleSheet(f"background: rgba(16, 185, 129, 0.15); color: {EMERALD}; border-radius: 14px;")
+        count_badge.setStyleSheet(f"background: {badge_bg}; color: {badge_color}; border-radius: 14px;")
 
         info_widget = QWidget()
         info_widget.setStyleSheet("background: transparent;")
@@ -295,7 +301,9 @@ class DashboardScreen(QWidget):
         info_layout.setContentsMargins(5, 0, 5, 0)
         info_layout.setSpacing(4)
 
-        name_lbl = QLabel(name)
+        # إضافة رمز ↳ للمجلدات الفرعية
+        display_name = f"↳ {name}" if is_sub else name
+        name_lbl = QLabel(display_name)
         name_lbl.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
         name_lbl.setStyleSheet(f"color: {TEXT_MAIN}; background:transparent;")
         name_lbl.setAlignment(lang_manager.align | Qt.AlignmentFlag.AlignVCenter)

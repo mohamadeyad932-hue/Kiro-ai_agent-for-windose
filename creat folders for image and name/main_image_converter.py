@@ -69,7 +69,8 @@ print(" All models loaded successfully!\n")
 def generate_image_caption(image_path: str) -> str:
     try:
         raw_image = Image.open(image_path).convert('RGB')
-        inputs = blip_processor(raw_image, return_tensors="pt").to(device)
+        inputs = blip_processor(raw_image, return_tensors="pt")
+        inputs = {k: v.to(device) for k, v in inputs.items()}
         out = blip_model.generate(**inputs, max_new_tokens=20)
         caption = blip_processor.decode(out[0], skip_special_tokens=True)
         return caption

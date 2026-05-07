@@ -5,13 +5,24 @@ Kiro AI - Main Application (PyQt6) - Bilingual
 import sys
 import os
 
+# ─── دعم وضع PyInstaller المجمّد ───
+# عند التشغيل كـ exe، الملفات المُرفقة (datas) تكون في sys._MEIPASS
+if getattr(sys, 'frozen', False):
+    _BUNDLE_DIR = sys._MEIPASS
+    _UI_DIR = os.path.join(_BUNDLE_DIR, "uiux_kiro_pyqt")
+else:
+    _BUNDLE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    _UI_DIR = os.path.dirname(os.path.abspath(__file__))
+
+sys.path.insert(0, _UI_DIR)
+
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                               QHBoxLayout, QPushButton, QLabel, QStackedWidget,
                               QFrame, QGraphicsDropShadowEffect, QGraphicsOpacityEffect)
 from PyQt6.QtCore import Qt, QSize, QPropertyAnimation, QEasingCurve
 from PyQt6.QtGui import QFont, QColor, QIcon
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 
 from theme import COLORS, WINDOW_WIDTH, WINDOW_HEIGHT, SIDEBAR_WIDTH, GLOBAL_STYLESHEET
 from translations import lang_manager, t
@@ -129,7 +140,7 @@ class KiroApp(QMainWindow):
         # تحميل الصورة لتكون خلفية
         import os
         from PyQt6.QtGui import QPixmap
-        img_path = os.path.join(os.path.dirname(__file__), "Picture1.png")
+        img_path = os.path.join(_UI_DIR, "Picture1.png")
         self._bg_pixmap = QPixmap(img_path)
 
         self.current_page = "sp"
@@ -388,7 +399,7 @@ class KiroApp(QMainWindow):
         layout.addWidget(self._labels["cat1"])
         layout.addSpacing(8)
 
-        ICONS_DIR = os.path.join(os.path.dirname(__file__), "icons")
+        ICONS_DIR = os.path.join(_UI_DIR, "icons")
 
         ico_path = os.path.join(ICONS_DIR, "homeregular_106344.ico")
         self._add_nav_btn(ico_path if os.path.exists(ico_path) else "🏠", "nav_sp", "sp", layout)
@@ -510,7 +521,8 @@ class KiroApp(QMainWindow):
         if page_id == "pr" and kwargs.get("start_processing"):
             self.screens["pr"].start_processing(
                 target_paths=kwargs.get("target_paths"),
-                mode=kwargs.get("mode", "all")
+                mode=kwargs.get("mode", "all"),
+                nested_folders=kwargs.get("nested_folders", False)
             )
 
     def _toggle_sidebar(self):

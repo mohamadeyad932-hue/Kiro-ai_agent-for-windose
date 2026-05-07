@@ -7,7 +7,7 @@ import os
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
                              QPushButton, QFrame, QScrollArea, QGridLayout,
                              QGraphicsDropShadowEffect, QApplication,
-                             QLineEdit, QFileDialog, QMessageBox)
+                             QLineEdit, QFileDialog, QMessageBox, QSizePolicy)
 from PyQt6.QtCore import Qt, pyqtProperty, QPropertyAnimation, pyqtSignal, QEasingCurve
 from PyQt6.QtGui import QFont, QColor, QPainter, QBrush
 from translations import lang_manager, t
@@ -177,6 +177,32 @@ class ConfigScreen(QWidget):
         from theme import paint_bg
         paint_bg(self)
 
+    def resizeEvent(self, event):
+        """تبديل تخطيط البطاقتين ديناميكياً حسب عرض النافذة"""
+        super().resizeEvent(event)
+        if not hasattr(self, '_cards_box'):
+            return
+
+        w = self.width()
+        breakpoint = 650  # نقطة التحول بين الأفقي والعمودي
+
+        if w < breakpoint and not self._is_vertical:
+            # تحويل إلى تخطيط عمودي (فوق بعض)
+            self._cards_box.setDirection(QHBoxLayout.Direction.TopToBottom)
+            self._cards_box.setSpacing(15)
+            self._is_vertical = True
+        elif w >= breakpoint and self._is_vertical:
+            # تحويل إلى تخطيط أفقي (جنب بعض)
+            self._cards_box.setDirection(QHBoxLayout.Direction.LeftToRight)
+            self._cards_box.setSpacing(20)
+            self._is_vertical = False
+
+        # تعديل الهوامش ديناميكياً
+        if hasattr(self, '_content_layout'):
+            margin = max(10, min(30, w // 25))
+            self._content_layout.setContentsMargins(margin, margin, margin, margin)
+
+
     def _build(self):
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
@@ -186,6 +212,7 @@ class ConfigScreen(QWidget):
         content = QWidget()
         content.setStyleSheet("background: transparent;")
         layout = QVBoxLayout(content)
+        self._content_layout = layout
         layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         layout.setContentsMargins(30, 30, 30, 30)
         layout.setSpacing(0)
@@ -205,14 +232,16 @@ class ConfigScreen(QWidget):
         layout.addWidget(self._labels["sub"])
         layout.addSpacing(30)
 
-        # ─── البطاقتين العلويتين ───
-        cards_widget = QWidget()
-        cards_grid = QGridLayout(cards_widget)
-        cards_grid.setSpacing(15)
-        cards_grid.setContentsMargins(0, 0, 0, 0)
+        # ─── البطاقتين العلويتين (تخطيط ديناميكي) ───
+        self._cards_container = QWidget()
+        self._cards_container.setStyleSheet("background: transparent;")
+        self._cards_box = QHBoxLayout(self._cards_container)
+        self._cards_box.setSpacing(20)
+        self._cards_box.setContentsMargins(0, 0, 0, 0)
 
-        self._path_card_lbl, path_card = self._create_card("config_paths_title")
-        pc_layout = path_card.layout()
+        self._path_card_lbl, self._path_card = self._create_card("config_paths_title")
+        self._path_card.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        pc_layout = self._path_card.layout()
         self.folder_selector = FolderSelectionRow()
         pc_layout.addWidget(self.folder_selector)
         
@@ -223,20 +252,24 @@ class ConfigScreen(QWidget):
         pc_layout.addWidget(self.toggle_desktop)
         pc_layout.addWidget(self.toggle_downloads)
         pc_layout.addWidget(self.toggle_documents)
-        
         pc_layout.addStretch()
-        cards_grid.addWidget(path_card, 0, 0)
 
-        self._type_card_lbl, type_card = self._create_card("config_types_title")
-        tc_layout = type_card.layout()
+        self._type_card_lbl, self._type_card = self._create_card("config_types_title")
+        self._type_card.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        tc_layout = self._type_card.layout()
         self.toggle_text = ToggleRow("config_text_data", "config_text_data_sub", True)
         self.toggle_visual = ToggleRow("config_visual_data", "config_visual_data_sub", True)
+        self.toggle_nested = ToggleRow("config_nested_folders", "config_nested_folders_sub", False)
         tc_layout.addWidget(self.toggle_text)
         tc_layout.addWidget(self.toggle_visual)
+        tc_layout.addWidget(self.toggle_nested)
+        tc_layout.addStretch()
 
-        cards_grid.addWidget(type_card, 0, 1)
+        self._cards_box.addWidget(self._path_card, stretch=1)
+        self._cards_box.addWidget(self._type_card, stretch=1)
 
-        layout.addWidget(cards_widget)
+        self._is_vertical = False  # تتبع الوضع الحالي للتخطيط
+        layout.addWidget(self._cards_container)
         layout.addSpacing(30)
 
         # ─── زر التشغيل ───
@@ -338,5 +371,7 @@ class ConfigScreen(QWidget):
             ModernDialog(t("err_path_title"), t("err_type_missing"), self).exec()
             return
 
+        nested = self.toggle_nested.switch.checked
+
         if self.on_navigate:
-            self.on_navigate("pr", start_processing=True, target_paths=target_paths, mode=mode)
+            self.on_navigate("pr", start_processing=True, target_paths=target_paths, mode=mode, nested_folders=nested)

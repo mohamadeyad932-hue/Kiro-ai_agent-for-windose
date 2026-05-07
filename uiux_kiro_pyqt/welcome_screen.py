@@ -1,5 +1,12 @@
 import os
+import sys
 import random
+
+# ─── دعم وضع PyInstaller المجمّد ───
+if getattr(sys, 'frozen', False):
+    _UI_DIR = os.path.join(sys._MEIPASS, "uiux_kiro_pyqt")
+else:
+    _UI_DIR = os.path.dirname(os.path.abspath(__file__))
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QFrame, QSizePolicy, QGraphicsDropShadowEffect
@@ -26,7 +33,7 @@ class RoboticCircularLogo(QWidget):
         super().__init__(parent)
         self.setFixedSize(size, size)
         self._size = size
-        logo_path = os.path.join(os.path.dirname(__file__), "Gemini_Generated_Image_rrv8szrrv8szrrv8.png")
+        logo_path = os.path.join(_UI_DIR, "Gemini_Generated_Image_rrv8szrrv8szrrv8.png")
         self._pixmap = QPixmap(logo_path).scaled(
             size, size,
             Qt.AspectRatioMode.KeepAspectRatioByExpanding,

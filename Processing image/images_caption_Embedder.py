@@ -81,7 +81,8 @@ def scan_folder(path):
 def get_embedding(image_path):
     """إرسال الصورة إلى CLIP والحصول على بصمة 512 بُعد."""
     image = Image.open(image_path).convert("RGB")
-    inputs = processor(images=image, return_tensors="pt").to(device)
+    inputs = processor(images=image, return_tensors="pt")# type: ignore
+    inputs = {k: v.to(device) for k, v in inputs.items()}
 
     with torch.no_grad():
         outputs = model.get_image_features(**inputs)

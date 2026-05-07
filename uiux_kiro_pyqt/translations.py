@@ -70,8 +70,8 @@ STRINGS = {
         "en": "Kiro AI Core Terminal",
     },
     "version": {
-        "ar": "Kiro AI v2.5.0",
-        "en": "Kiro AI v2.5.0",
+        "ar": "Kiro AI v.0.0",
+        "en": "Kiro AI v0.0.0",
     },
     "lang_btn": {
         "ar": "EN",
@@ -92,10 +92,10 @@ STRINGS = {
 
     # ─── الشريط الجانبي ───
     "sidebar_brand": {"ar": "Kiro AI", "en": "Kiro AI"},
-    "sidebar_subtitle": {"ar": "Neural Organizer", "en": "Neural Organizer"},
+    "sidebar_subtitle": {"ar": "Smart AI Agent", "en": "Smart AI Agent"},
     "sidebar_cat1": {"ar": "الوحدات النشطة", "en": "Active Modules"},
     "sidebar_cat2": {"ar": "بروتوكولات أخرى", "en": "Other Protocols"},
-    "sidebar_status1": {"ar": "الشبكة العصبية مستقرة", "en": "Neural network stable"},
+    "sidebar_status1": {"ar": "الوكيل الذكي كيرو", "en": "kiro the smart agent"},
     "sidebar_status2": {"ar": "جاهز لاستقبال الأوامر", "en": "Ready for commands"},
 
     "nav_sp": {"ar": "نظام الترحيب", "en": "Welcome"},
@@ -124,25 +124,25 @@ STRINGS = {
     },
     "feat1_title": {"ar": "تشفير وخصوصية", "en": "Encryption & Privacy"},
     "feat1_desc": {
-        "ar": "الخوارزمية تعمل محلياً على\nنواتك. لا اتصال خارجي.",
-        "en": "Algorithm runs locally on\nyour device. No external connection.",
+        "ar": "الوكيل يعمل محلياً على\nجهازك. لا اتصال خارجي.",
+        "en": "agent works locally on\nyour device. No external connection.",
     },
-    "feat2_title": {"ar": "شبكة عصبية دقيقة", "en": "Precise Neural Network"},
+    "feat2_title": {"ar": "خوارزميات دقيقة", "en": "Accurate algorithms"},
     "feat2_desc": {
         "ar": "يفهم النصوص والصور\nويصنفها كعقل بشري رقمي.",
         "en": "Understands text and images\nclassifying them like a digital brain.",
     },
     "feat3_title": {"ar": "سرعة فائقة", "en": "Ultra Speed"},
     "feat3_desc": {
-        "ar": "مزامنة وهيكلة آلاف الملفات\nخلال أجزاء من الثانية.",
-        "en": "Sync and organize thousands\nof files in milliseconds.",
+        "ar": "مزامنة وهيكلة آلاف الملفات\nخلال عدة دقائق .",
+        "en": "Sync and organize thousands\nof files in minutes.",
     },
 
     # ─── شاشة التهيئة ───
     "config_title": {"ar": "إحداثيات المعالجة", "en": "Processing Coordinates"},
     "config_sub": {
-        "ar": "حدد مسارات البيانات التي تريد أن تحللها الشبكة العصبية.",
-        "en": "Select the data paths you want the neural network to analyze.",
+        "ar": "حدد مسارات البيانات التي تريد أن تحللها نماذج معالجة النصوص.",
+        "en": "Select the data paths you want the text processing models to analyze.",
     },
     "config_paths_title": {"ar": "نقاط الإدخال (المسارات)", "en": "Input Points (Paths)"},
     "config_desktop": {"ar": "سطح المكتب", "en": "Desktop"},
@@ -156,6 +156,8 @@ STRINGS = {
     "config_text_data_sub": {"ar": "يتطلب تفعيل وحدة معالجة اللغات", "en": "Requires NLP module activation"},
     "config_visual_data": {"ar": "البيانات البصرية", "en": "Visual Data"},
     "config_visual_data_sub": {"ar": "تحليل الصور عبر الرؤية الحاسوبية", "en": "Image analysis via Computer Vision"},
+    "config_nested_folders": {"ar": "مجلدات متداخلة (فرز دقيق)", "en": "Nested Folders (Deep Sort)"},
+    "config_nested_folders_sub": {"ar": "تقسيم المجلدات إلى مجلدات فرعية أدق عند اكتشاف مجموعات مختلفة", "en": "Split folders into sub-folders when different groups are detected"},
     "config_tables": {"ar": "الجداول وقواعد البيانات", "en": "Tables & Databases"},
     "config_tables_sub": {"ar": "استخراج الأنماط من Excel", "en": "Extract patterns from Excel"},
     "config_slider_title": {"ar": "دقة وعمق الفرز", "en": "Sorting Depth & Accuracy"},
@@ -167,8 +169,8 @@ STRINGS = {
  
     # رسائل المراحل
     "phase1_title": {"ar": "جاري العمل...", "en": "Working..."},
-    "phase1_sub": {"ar": "يتم الآن تحليل ومعالجة البيانات عبر المحرك العصبوني", "en": "Analyzing and processing data via neural engine"},
-    "phase2_title": {"ar": "Kiro يقوم بالتحليل العصبوني...", "en": "Kiro performing neural analysis..."},
+    "phase1_sub": {"ar": "يتم الآن تحليل ومعالجة البيانات عبر نماذج معالجة النصوص", "en": "Analyzing and processing data via text processing models"},
+    "phase2_title": {"ar": "Kiro يقوم بالتحليل العميق...", "en": "Kiro performing deep analysis..."},
     "phase2_sub": {"ar": "نماذج الذكاء الاصطناعي تقرأ وتفهم المحتوى", "en": "AI models reading and understanding content"},
     "phase3_title": {"ar": "Kiro يهيكل البيانات...", "en": "Kiro structuring data..."},
     "phase3_sub": {"ar": "توليد المجلدات الذكية ونقل الكيانات إليها", "en": "Generating smart folders and moving entities"},
@@ -177,7 +179,7 @@ STRINGS = {
 
     # ─── شاشة لوحة التحكم ───
     "dash_hero_title": {"ar": "تم تنظيم بياناتك بنجاح", "en": "Data Organized Successfully"},
-    "dash_hero_desc": {"ar": "قام Kiro AI بتحليل بياناتك وتصنيفها في مسارات عصبونية ذكية.", "en": "Kiro AI analyzed your data and classified it into smart neural pathways."},
+    "dash_hero_desc": {"ar": "قام Kiro AI بتحليل بياناتك وتصنيفها في مسارات  ذكية.", "en": "Kiro AI analyzed your data and classified it into smart  pathways."},
     "dash_stat1_label": {"ar": "كيانات معالجة", "en": "Processed Entities"},
     "dash_stat1_value": {"ar": "287", "en": "287"},
     "dash_stat1_sub": {"ar": "موزعة في 3 عقد رئيسية", "en": "Distributed in 3 main nodes"},
@@ -220,18 +222,18 @@ STRINGS = {
     "about_sub": {"ar": "تعرف على العقل الإلكتروني وراء هذه المنصة.", "en": "Learn about the electronic brain behind this platform."},
     "about_s1_title": {"ar": "ما هو Kiro AI؟", "en": "What is Kiro AI?"},
     "about_s1_body": {
-        "ar": "مشروع Kiro AI هو مساعد تنظيم ذكي يعتمد على خوارزميات التعلم الآلي لترتيب الفوضى الرقمية في جهازك. صُمم للمحترفين والطلاب الذين يمتلكون مئات أو آلاف الملفات المبعثرة، حيث يقوم بقراءتها، تحليل نوعها ومحتواها (عبر معالجة اللغات الطبيعية للوصف، والرؤية الحاسوبية للصور)، ثم نقلها آلياً إلى مجلدات ذكية ذات سياق موحد.",
+        "ar": "مشروع Kiro AI هو مساعد تنظيم ذكي يعتمد على خوارزميات التعلم الآلي لترتيب الفوضى الرقمية في جهازك. صُمم للمدراء ورجال الأعمال والطلاب الذين يمتلكون مئات أو آلاف الملفات المبعثرة، حيث يقوم بقراءتها، تحليل نوعها ومحتواها (عبر معالجة اللغات الطبيعية للوصف، والرؤية الحاسوبية للصور)، ثم نقلها آلياً إلى مجلدات ذكية ذات سياق موحد.",
         "en": "Kiro AI is a smart organizer that uses machine learning algorithms to sort digital chaos on your device. Designed for professionals and students with hundreds or thousands of scattered files, it reads, analyzes content type (via NLP for text and Computer Vision for images), then automatically moves them into smart contextual folders.",
     },
     "about_s2_title": {"ar": "كيف تعمل الخوارزمية؟", "en": "How does the algorithm work?"},
     "about_s2_body": {
-        "ar": "1. المسح السطحي: يبحث النظام عن الكيانات (الملفات) غير المنظمة في مسارات يتم تحديدها مسبقاً (مثل التنزيلات أو سطح المكتب).\n\n2. التحليل العصبوني (Deep Analysis): بدلاً من الاعتماد على صيغة الملف فقط، يقرأ الذكاء الاصطناعي محتوى الملف لفهم سياقه (هل هو تقرير عمل؟ صورة عائلية؟ فاتورة مالية؟).\n\n3. إعادة الهيكلة: بناءً على \"المجموعات\" التي يكتشفها، يقوم بإنشاء عقد تنظيمية ونقل الكيانات إليها بسرعة فائقة.",
-        "en": "1. Surface Scan: The system searches for unorganized entities (files) in pre-defined paths (like Downloads or Desktop).\n\n2. Deep Analysis: Instead of relying on file format alone, the AI reads file content to understand its context (is it a work report? family photo? financial invoice?).\n\n3. Restructuring: Based on the discovered \"clusters\", it creates organizational nodes and moves entities to them at ultra speed.",
+        "ar": "1. المسح السطحي: يبحث النظام عن الكيانات (الملفات) غير المنظمة في مسارات يتم تحديدها مسبقاً (مثل التنزيلات أو سطح المكتب).\n\n2. التحليل العميق (Deep Analysis): بدلاً من الاعتماد على صيغة الملف فقط، تعتمد نماذج معالجة النصوص على قراءة محتوى الملف لفهم سياقه (هل هو تقرير عمل؟ صورة عائلية؟ فاتورة مالية؟).\n\n3. إعادة الهيكلة: بناءً على \"المجموعات\" التي يكتشفها، يقوم بإنشاء عقد تنظيمية ونقل الكيانات إليها بسرعة فائقة.",
+        "en": "1. Surface Scan: The system searches for unorganized entities (files) in pre-defined paths (like Downloads or Desktop).\n\n2. Deep Analysis: Instead of relying on file format alone, text processing models read file content to understand its context (is it a work report? family photo? financial invoice?).\n\n3. Restructuring: Based on the discovered \"clusters\", it creates organizational nodes and moves entities to them at ultra speed.",
     },
     "about_s3_title": {"ar": "الخصوصية والأمان", "en": "Privacy & Security"},
     "about_s3_body": {
-        "ar": "الخصوصية هي جوهر Kiro AI. تم بناء النماذج العصبونية لتعمل بشكل محلي (Local Processing) تماماً على عتاد جهازك، مما يعني أن ملفاتك الشخصية، تقاريرك، وصورك لا تُرفع أبداً إلى أي سحابة خارجية أو خوادم طرف ثالث. كل المعالجة تتم داخل جهازك.",
-        "en": "Privacy is at the core of Kiro AI. Neural models are built to run entirely locally on your hardware, meaning your personal files, reports, and photos are never uploaded to any external cloud or third-party servers. All processing happens on your device.",
+        "ar": "الخصوصية هي جوهر Kiro AI. تم استخدام نماذج معالجة نصوص متوافقة مع المشروع لتعمل بشكل محلي (Local Processing) تماماً على عتاد جهازك، مما يعني أن ملفاتك الشخصية، تقاريرك، وصورك لا تُرفع أبداً إلى أي سحابة خارجية أو خوادم طرف ثالث. كل المعالجة تتم داخل جهازك.",
+        "en": "Privacy is at the core of Kiro AI. Text processing models adapted for the project run entirely locally on your hardware, meaning your personal files, reports, and photos are never uploaded to any external cloud or third-party servers. All processing happens on your device.",
     },
     # ─── رسائل الخطأ ───
     "err_path_title": {"ar": "خطأ", "en": "Error"},

@@ -10,3 +10,10 @@ bert_local_model/
 *.exe
 models/
 natural_images/
+
+# --- مجلدات البناء والتصدير (PyInstaller & Inno Setup) ---
+build/
+dist/
+Output_Installer/
+*.pyc
+*.spec
