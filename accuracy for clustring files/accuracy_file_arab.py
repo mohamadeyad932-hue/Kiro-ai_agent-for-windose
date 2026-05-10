@@ -331,7 +331,7 @@ def main():
         vectors = embed_texts(texts, SBERT_MODEL_PATH)
         save_cache(vectors, true_labels, file_names)
 
-    # === [ 🔥 تقنية ذكية لرفع الدقة: خفض الأبعاد PCA ] ===
+    # === [  تقنية ذكية لرفع الدقة: خفض الأبعاد PCA ] ===
     # الفيكتورات من النماذج اللغوية تحتوي على ضوضاء رياضية.
     # تقليلها إلى 50 بُعد يصفي الضوضاء ويبرز المعالم القوية ويجعل الـ ARI و NMI يقفززون للأعلى.
     from sklearn.decomposition import PCA

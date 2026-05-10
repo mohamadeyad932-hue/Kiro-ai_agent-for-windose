@@ -19,6 +19,8 @@ from PIL import Image
 
 try:
     from transformers import BlipProcessor, BlipForConditionalGeneration
+    import transformers
+    transformers.logging.set_verbosity_error()
 except ImportError:
     print("pip install transformers torch torchvision")
     import sys
@@ -38,7 +40,8 @@ from sklearn.metrics.pairwise import cosine_similarity
 #              إعداد المسارات
 # ==========================================
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-IMAGE_CLUSTERING_DIR = os.path.join(BASE_DIR, "clustring_imge")
+import tempfile
+IMAGE_CLUSTERING_DIR = os.path.join(tempfile.gettempdir(), "KiroAI_Data", "image_clusters")
 SBERT_MODEL_PATH = os.path.join(BASE_DIR, "models", "sbert_high_res")
 BLIP_MODEL_PATH = os.path.join(BASE_DIR, "models", "blip-image-captioning-base")
 
@@ -69,7 +72,7 @@ print(" All models loaded successfully!\n")
 def generate_image_caption(image_path: str) -> str:
     try:
         raw_image = Image.open(image_path).convert('RGB')
-        inputs = blip_processor(raw_image, return_tensors="pt")
+        inputs = blip_processor(raw_image, return_tensors="pt")# type: ignore
         inputs = {k: v.to(device) for k, v in inputs.items()}
         out = blip_model.generate(**inputs, max_new_tokens=20)
         caption = blip_processor.decode(out[0], skip_special_tokens=True)
@@ -163,7 +166,8 @@ def extract_paths_from_variable(group, filename: str) -> list:
 def save_metadata(group_name, folder_path, files_count):
     """حفظ معلومات المجلد المنشأ في ملف JSON للواجهة"""
     import json
-    json_path = os.path.join(BASE_DIR, "created_folders.json")
+    import tempfile
+    json_path = os.path.join(tempfile.gettempdir(), "KiroAI_Data", "created_folders.json")
     data = {"created_folders": []}
     
     if os.path.exists(json_path):
@@ -191,7 +195,7 @@ def process_image_clusters():
     print("Searching in image dictionaries...")
     
     for filename in os.listdir(IMAGE_CLUSTERING_DIR):
-        if not filename.endswith(".py"):
+        if not filename.startswith("similar_") or not filename.endswith(".py"):
             continue
             
         file_path = os.path.join(IMAGE_CLUSTERING_DIR, filename)

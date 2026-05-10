@@ -206,7 +206,7 @@ def embed_images(image_paths, model_path):
         if not batch_images:
             continue
 
-        inputs = processor(images=batch_images, return_tensors="pt").to(device)
+        inputs = processor(images=batch_images, return_tensors="pt").to(device)# type: ignore
         with torch.no_grad():
             features = model.get_image_features(**inputs)
         # تطبيع الفيكتورات (Normalization)

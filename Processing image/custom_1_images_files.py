@@ -3,9 +3,8 @@
 توليد تلقائي
 """
 
-# جميع الصور ذات اللواحق المستهدفة (39 ملف)
+# جميع الصور ذات اللواحق المستهدفة (13 ملف)
 custom_1_images = {
-    "airplane_0000": ".jpg",
     "airplane_0001": ".jpg",
     "airplane_0002": ".jpg",
     "airplane_0003": ".jpg",
@@ -13,35 +12,10 @@ custom_1_images = {
     "airplane_0005": ".jpg",
     "airplane_0006": ".jpg",
     "airplane_0007": ".jpg",
-    "airplane_0008": ".jpg",
     "airplane_0009": ".jpg",
     "airplane_0010": ".jpg",
     "airplane_0011": ".jpg",
     "airplane_0012": ".jpg",
     "airplane_0013": ".jpg",
     "airplane_0014": ".jpg",
-    "cat_0000": ".jpg",
-    "cat_0001": ".jpg",
-    "cat_0002": ".jpg",
-    "cat_0003": ".jpg",
-    "cat_0008": ".jpg",
-    "cat_0009": ".jpg",
-    "cat_0010": ".jpg",
-    "cat_0011": ".jpg",
-    "cat_0016": ".jpg",
-    "cat_0017": ".jpg",
-    "cat_0018": ".jpg",
-    "cat_0019": ".jpg",
-    "dog_0000": ".jpg",
-    "dog_0001": ".jpg",
-    "dog_0002": ".jpg",
-    "dog_0003": ".jpg",
-    "dog_0004": ".jpg",
-    "dog_0005": ".jpg",
-    "dog_0008": ".jpg",
-    "dog_0009": ".jpg",
-    "dog_0010": ".jpg",
-    "dog_0011": ".jpg",
-    "dog_0012": ".jpg",
-    "dog_0013": ".jpg",
 }

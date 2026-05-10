@@ -38,6 +38,11 @@ def run_script(dir_name, script_name, description, folder_name=None, folder_path
     """Executes a specific script inside its directory"""
     script_path = os.path.join(dir_name, script_name)
     
+    # Check for compiled version if original is missing
+    if not os.path.exists(script_path) and os.path.exists(script_path + "c"):
+        script_name += "c"
+        script_path += "c"
+        
     print(f"\n{'-'*50}")
     print(f"[*] Executing: {description}")
     print(f"{'-'*50}")
@@ -172,7 +177,8 @@ def execute_pipeline(mode_choice, target_paths, nested=False):
 
     # حفظ الوقت الكلي في ملف النتائج ليظهر بدقة في الداشبورد
     import json
-    json_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "created_folders.json")
+    import tempfile
+    json_path = os.path.join(tempfile.gettempdir(), "KiroAI_Data", "created_folders.json")
     if os.path.exists(json_path):
         try:
             with open(json_path, 'r', encoding='utf-8') as f:

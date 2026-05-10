@@ -35,7 +35,7 @@ except ImportError:
     sys.exit(1)
 
 try:
-    import PyPDF2
+    import PyPDF2  # type: ignore
 except ImportError:
     pass
 
@@ -79,6 +79,9 @@ all_stop_words = list(ARABIC_STOPWORDS.union(ENGLISH_STOP_WORDS))
 # ==========================================
 #          تحميل النموذج
 # ==========================================
+import transformers
+transformers.logging.set_verbosity_error()
+
 print("⏳ [Sub-Cluster Text] Loading SBERT model...")
 sbert_model = SentenceTransformer(MODEL_PATH)
 print("  [Sub-Cluster Text] Model loaded successfully!\n")
@@ -106,7 +109,7 @@ def read_file_content(file_path: str) -> str:
 
     try:
         if ext == ".pdf":
-            import PyPDF2
+            import PyPDF2 # type: ignore
             with open(file_path, "rb") as f:
                 reader = PyPDF2.PdfReader(f)
                 pages_to_read = min(len(reader.pages), 15)

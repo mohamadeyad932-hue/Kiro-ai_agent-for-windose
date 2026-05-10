@@ -188,15 +188,19 @@ class PipelineWorker(QThread):
             
             # بناء الأمر
             # نستخدم sys.executable لضمان استخدام نفس بيئة بايثون
-            script_path = os.path.join(self.base_dir, "..", "run_project.py")
-            if not os.path.exists(script_path):
-                # ربما base_dir هو بالفعل المجلد الرئيسي (حيث يوجد main.py و run_project.py)
-                script_path = os.path.join(self.base_dir, "run_project.py")
+            base_script_paths = [
+                os.path.normpath(os.path.join(self.base_dir, "..", "run_project.py")),
+                os.path.normpath(os.path.join(self.base_dir, "run_project.py"))
+            ]
             
-            # إذا لم يتم العثور عليه، نحاول في المجلد الأب (لأن main.py في uiux_kiro_pyqt)
-            if not os.path.exists(script_path):
-                parent_dir = os.path.dirname(self.base_dir)
-                script_path = os.path.join(parent_dir, "run_project.py")
+            script_path = base_script_paths[0]
+            for p in base_script_paths:
+                if os.path.exists(p):
+                    script_path = p
+                    break
+                elif os.path.exists(p + "c"):
+                    script_path = p + "c"
+                    break
 
             command = [_get_python_executable(), "-u", script_path, "--mode", self.mode]
             if self.nested_folders:
@@ -504,7 +508,8 @@ class ProcessingScreen(QWidget):
         base_dir = os.path.dirname(os.path.abspath(__file__))
         
         # مسح نتائج الجلسة السابقة لضمان عرض نتيجة هذه العملية فقط في لوحة التحكم
-        json_path = os.path.join(os.path.dirname(base_dir), "created_folders.json")
+        import tempfile
+        json_path = os.path.join(tempfile.gettempdir(), "KiroAI_Data", "created_folders.json")
         if os.path.exists(json_path):
             try:
                 os.remove(json_path)

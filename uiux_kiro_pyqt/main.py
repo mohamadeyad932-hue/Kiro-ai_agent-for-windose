@@ -621,7 +621,8 @@ def main():
     app.setStyleSheet(GLOBAL_STYLESHEET)
     
     # مسح نتائج الجلسات السابقة عند بدء التشغيل لضمان تصفير الواجهة
-    json_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "created_folders.json")
+    import tempfile
+    json_path = os.path.join(tempfile.gettempdir(), "KiroAI_Data", "created_folders.json")
     if os.path.exists(json_path):
         try: os.remove(json_path)
         except: pass

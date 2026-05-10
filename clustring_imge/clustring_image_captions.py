@@ -39,7 +39,8 @@ except ImportError:
 
 HOME = os.path.expanduser("~")
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-PROCESSING_DIR = os.path.join(CURRENT_DIR, "..", "Processing image")
+import tempfile
+PROCESSING_DIR = os.path.join(tempfile.gettempdir(), "KiroAI_Data", "image_processing")
 if PROCESSING_DIR not in sys.path:
     sys.path.append(PROCESSING_DIR)
 
@@ -185,7 +186,10 @@ def find_duplicates(hashes):
 
 def save_duplicates_script(duplicate_groups):
     """حفظ المكررات في قاموس موحد"""
-    script_path = os.path.join(CURRENT_DIR, "duplicates_images.py")
+    import tempfile
+    output_dir = os.path.join(tempfile.gettempdir(), "KiroAI_Data", "image_clusters")
+    os.makedirs(output_dir, exist_ok=True)
+    script_path = os.path.join(output_dir, "duplicates_images.py")
 
     all_duplicates = {}
     for group in duplicate_groups:
@@ -272,7 +276,10 @@ def run_duplicate_detection():
 
 def save_image_cluster_scripts(folder_name, folder_groups):
     """حفظ المجموعات في ملفات .py كقوائم مسارات كاملة"""
-    script_path = os.path.join(CURRENT_DIR, f"similar_{folder_name}_images.py")
+    import tempfile
+    output_dir = os.path.join(tempfile.gettempdir(), "KiroAI_Data", "image_clusters")
+    os.makedirs(output_dir, exist_ok=True)
+    script_path = os.path.join(output_dir, f"similar_{folder_name}_images.py")
 
     lines = ['"""', f"Similar image groups: {folder_name}", '"""', ""]
     saved_groups = 0

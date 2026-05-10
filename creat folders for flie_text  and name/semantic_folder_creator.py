@@ -22,13 +22,15 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 try:
     from sentence_transformers import SentenceTransformer
+    import transformers
+    transformers.logging.set_verbosity_error()
 except ImportError:
     print("pip install sentence-transformers")
     import sys
     sys.exit(1)
 
 try:
-    import PyPDF2
+    import PyPDF2  # type: ignore
 except ImportError:
     pass
 
@@ -42,7 +44,8 @@ except ImportError:
 # ==========================================
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODEL_PATH = os.path.join(BASE_DIR, "models", "sbert_high_res")
-CLUSTERING_DIR = os.path.join(BASE_DIR, "clustring_files")
+import tempfile
+CLUSTERING_DIR = os.path.join(tempfile.gettempdir(), "KiroAI_Data", "text_clusters")
 
 print("⏳ Loading SBERT model...")
 sbert_model = SentenceTransformer(MODEL_PATH)
@@ -83,7 +86,7 @@ def read_file_content(file_path: str) -> str:
 
     try:
         if ext == ".pdf":
-            import PyPDF2
+            import PyPDF2 # type: ignore
             with open(file_path, "rb") as f:
                 reader = PyPDF2.PdfReader(f)
                 pages_to_read = min(len(reader.pages), 15)
@@ -185,7 +188,8 @@ def get_semantic_label(texts):
 def save_metadata(group_name, folder_path, files_count):
     """حفظ معلومات المجلد المنشأ في ملف JSON للواجهة"""
     import json
-    json_path = os.path.join(BASE_DIR, "created_folders.json")
+    import tempfile
+    json_path = os.path.join(tempfile.gettempdir(), "KiroAI_Data", "created_folders.json")
     data = {"created_folders": []}
     
     if os.path.exists(json_path):
@@ -213,7 +217,7 @@ def process_dictionaries(clustering_dir):
 
     print("\n Searching in dictionaries...")
     for filename in os.listdir(clustering_dir):
-        if not filename.endswith(".py"):
+        if not filename.startswith("similar_") or not filename.endswith("_files.py"):
             continue
 
         file_path = os.path.join(clustering_dir, filename)

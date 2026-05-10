@@ -170,7 +170,8 @@ class DashboardScreen(QWidget):
         import json
         import os
         
-        json_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "created_folders.json")
+        import tempfile
+        json_path = os.path.join(tempfile.gettempdir(), "KiroAI_Data", "created_folders.json")
         
         if not os.path.exists(json_path):
             self._reset_to_zero()

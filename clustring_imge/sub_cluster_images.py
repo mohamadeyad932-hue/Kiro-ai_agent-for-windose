@@ -29,6 +29,8 @@ except ImportError:
 try:
     from PIL import Image
     from transformers import BlipProcessor, BlipForConditionalGeneration
+    import transformers
+    transformers.logging.set_verbosity_error()
     import torch
 except ImportError:
     print("pip install transformers torch torchvision Pillow")
@@ -76,7 +78,7 @@ def generate_caption(image_path: str) -> str:
     """توليد وصف نصي للصورة عبر BLIP"""
     try:
         raw_image = Image.open(image_path).convert('RGB')
-        inputs = blip_processor(raw_image, return_tensors="pt").to(device)
+        inputs = blip_processor(raw_image, return_tensors="pt").to(device)# type: ignore
         out = blip_model.generate(**inputs, max_new_tokens=20)
         caption = blip_processor.decode(out[0], skip_special_tokens=True)
         return caption
@@ -188,7 +190,8 @@ def process_sub_clustering():
     فحص كل مجلد أنشأه النظام في المرحلة الأولى
     وتقسيمه إلى مجلدات فرعية إذا احتوى على مجموعات مختلفة
     """
-    json_path = os.path.join(BASE_DIR, "created_folders.json")
+    import tempfile
+    json_path = os.path.join(tempfile.gettempdir(), "KiroAI_Data", "created_folders.json")
 
     if not os.path.exists(json_path):
         print("[Sub-Cluster] No created_folders.json found. Nothing to sub-cluster.")

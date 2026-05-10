@@ -31,7 +31,8 @@ except ImportError:
 # إضافة مسار مجلد المعالجة ليتمكن بايثون من استيراد القواميس منه
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 BASE_DIR = os.path.dirname(CURRENT_DIR)
-PROCESSING_DIR = os.path.join(BASE_DIR, "Processing text files")
+import tempfile
+PROCESSING_DIR = os.path.join(tempfile.gettempdir(), "KiroAI_Data", "text_processing")
 if PROCESSING_DIR not in sys.path:
     sys.path.append(PROCESSING_DIR)
 
@@ -117,7 +118,8 @@ def auto_find_best_threshold(vectors):
 
 def save_cluster_scripts(folder_name, folder_sets):
     script_name = f"similar_{folder_name}_files.py"
-    output_dir = os.path.dirname(os.path.abspath(__file__))
+    output_dir = os.path.join(tempfile.gettempdir(), "KiroAI_Data", "text_clusters")
+    os.makedirs(output_dir, exist_ok=True)
     script_path = os.path.join(output_dir, script_name)
     
     lines = ['"""', f"File groups: {folder_name}", '"""', ""]

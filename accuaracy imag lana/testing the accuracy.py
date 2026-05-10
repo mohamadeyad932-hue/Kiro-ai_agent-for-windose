@@ -196,7 +196,7 @@ def extract_clip_embeddings(image_paths, clip_model_name):
         if not batch_images:
             continue
 
-        inputs = processor(images=batch_images, return_tensors="pt").to(device)
+        inputs = processor(images=batch_images, return_tensors="pt").to(device)  # type: ignore
         with torch.no_grad():
             features = model.get_image_features(**inputs)
         features = features / (features.norm(dim=-1, keepdim=True) + 1e-8)

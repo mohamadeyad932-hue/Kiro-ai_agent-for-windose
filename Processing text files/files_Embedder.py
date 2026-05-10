@@ -25,8 +25,10 @@ EXTENSIONS = {'.txt', '.pdf', '.docx'}
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODEL_PATH = os.path.join(BASE_DIR, "models", "sbert_high_res")
 
+import tempfile
 HOME       = os.path.expanduser('~')
-OUTPUT_DIR = os.path.dirname(os.path.abspath(__file__))
+OUTPUT_DIR = os.path.join(tempfile.gettempdir(), "KiroAI_Data", "text_processing")
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # Check if folder name and path were passed as arguments
 if len(sys.argv) > 2 and os.path.isdir(sys.argv[2]):
@@ -92,6 +94,9 @@ def scan_folder(path):
         with os.scandir(path) as entries:
             for entry in entries:
                 if not entry.is_file():
+                    continue
+                # Skip temporary files created by MS Office (hidden files starting with ~$)
+                if entry.name.startswith('~$'):
                     continue
                 name, ext = os.path.splitext(entry.name)
                 ext = ext.lower()
