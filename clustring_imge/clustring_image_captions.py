@@ -11,7 +11,7 @@ import shutil
 import numpy as np
 from itertools import combinations
 from collections import defaultdict
-import pandas as pd
+
 sys.stdout.reconfigure(encoding="utf-8")
 
 try:

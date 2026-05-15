@@ -65,9 +65,74 @@ def _read_txt(path):
 
 
 def _read_pdf(path):
-    """قراءة ملف PDF مع إغلاق الملف بشكل صحيح."""
+    """قراءة ملف PDF مع إغلاق الملف بشكل صحيح.
+    يستخدم عدة طرق لاستخراج النص لدعم أنواع PDF المختلفة
+    (مثل ملفات FlowCV التي تستخدم خطوط مدمجة أو رسومات متجهة).
+    """
     with fitz.open(path) as doc:
-        return "".join(page.get_text() for page in doc)
+        # الطريقة 1: الاستخراج العادي
+        text = "".join(page.get_text() for page in doc)
+        if text.strip():
+            return text
+
+        # الطريقة 2: استخراج النص مع ترتيب حسب التخطيط
+        text = "".join(page.get_text("text", sort=True) for page in doc)
+        if text.strip():
+            return text
+
+        # الطريقة 3: استخراج من البلوكات النصية (dict blocks)
+        all_text = []
+        for page in doc:
+            blocks = page.get_text("dict", sort=True).get("blocks", [])
+            for block in blocks:
+                if block.get("type") == 0:  # نص
+                    for line in block.get("lines", []):
+                        line_text = ""
+                        for span in line.get("spans", []):
+                            span_text = span.get("text", "")
+                            if span_text.strip():
+                                line_text += span_text
+                        if line_text.strip():
+                            all_text.append(line_text.strip())
+        if all_text:
+            return "\n".join(all_text)
+
+        # الطريقة 4: استخراج بصيغة rawdict (لملفات PDF المعقدة)
+        all_text = []
+        for page in doc:
+            try:
+                raw = page.get_text("rawdict", sort=True)
+                for block in raw.get("blocks", []):
+                    if block.get("type") == 0:
+                        for line in block.get("lines", []):
+                            for span in line.get("spans", []):
+                                chars = span.get("chars", [])
+                                if chars:
+                                    span_text = "".join(c.get("c", "") for c in chars)
+                                    if span_text.strip():
+                                        all_text.append(span_text.strip())
+            except Exception:
+                continue
+        if all_text:
+            return "\n".join(all_text)
+
+        # الطريقة 5: استخراج كـ HTML ثم تنظيف الوسوم
+        all_text = []
+        for page in doc:
+            try:
+                import re
+                html = page.get_text("html")
+                # إزالة وسوم HTML واستخراج النص فقط
+                clean = re.sub(r'<[^>]+>', ' ', html)
+                clean = re.sub(r'\s+', ' ', clean).strip()
+                if clean:
+                    all_text.append(clean)
+            except Exception:
+                continue
+        if all_text:
+            return "\n".join(all_text)
+
+        return ""
 
 
 def _read_docx(path):
@@ -244,7 +309,7 @@ if __name__ == "__main__":
                 continue
             
             if not text.strip():
-                print(f"  ⚠ Empty: {file_name}{ext}")
+                print(f"  ⚠ الملف فارغ (Empty file skipped): {file_name}{ext}")
                 continue
             
             # استخراج المتجه

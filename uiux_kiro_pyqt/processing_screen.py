@@ -10,6 +10,35 @@ import shutil
 from datetime import datetime
 
 
+def _ensure_pth_file(python_dir):
+    """ضمان وجود ملف python311._pth بجانب python311.dll لمنع خطأ pyvenv.cfg.
+    عندما يوجد هذا الملف، Python يدخل وضع العزل ولا يبحث عن pyvenv.cfg.
+    """
+    pth_file = os.path.join(python_dir, "python311._pth")
+    if not os.path.exists(pth_file):
+        try:
+            with open(pth_file, 'w', encoding='utf-8') as f:
+                f.write(".\n")
+                f.write("base_library.zip\n")
+        except OSError:
+            pass  # قد لا نملك صلاحيات الكتابة في Program Files
+
+
+def _get_python_env(python_exe_path):
+    """إعداد متغيرات البيئة لتشغيل python.exe المُضمّن بدون خطأ pyvenv.cfg.
+    يُضبط PYTHONNOUSERSITE لمنع البحث عن user site-packages.
+    ملاحظة: لا نستخدم PYTHONHOME لأنه يكسر استيراد المكتبات القياسية.
+    """
+    env = os.environ.copy()
+    if getattr(sys, 'frozen', False):
+        python_dir = os.path.dirname(python_exe_path)
+        env["PYTHONNOUSERSITE"] = "1"
+        env["PYTHONDONTWRITEBYTECODE"] = "1"
+        # ضمان وجود ._pth file
+        _ensure_pth_file(python_dir)
+    return env
+
+
 def _get_python_executable():
     """إيجاد مسار Python الحقيقي - ليس ملف exe المجمّد.
     عند تحويل المشروع بـ PyInstaller يصبح sys.executable يشير إلى main.exe
@@ -19,26 +48,31 @@ def _get_python_executable():
     if not getattr(sys, 'frozen', False):
         return sys.executable
 
-    # ── التطبيق مجمّد (frozen) - ابحث عن Python الحقيقي ──
-    # 1) تحقق من وجود python.exe داخل مجلد التطبيق المجمّع (مُضمّن مع PyInstaller)
+    # ── التطبيق مجمّد (frozen) - ابحث عن Python المُضمّن ──
     app_dir = os.path.dirname(sys.executable)
+
+    # 1) تحقق من python.exe داخل _internal (مُضمّن مع PyInstaller)
+    internal_python = os.path.join(app_dir, "_internal", "python.exe")
+    if os.path.isfile(internal_python):
+        return internal_python
+
+    # 2) تحقق من وجود python.exe بجانب الـ exe مباشرة
     local_python = os.path.join(app_dir, "python.exe")
     if os.path.isfile(local_python):
         return local_python
 
-    # 2) ابحث في البيئة الافتراضية venv بجانب المشروع
-    # عند التوزيع: dist/main/ يحتوي على exe، والمشروع الأصلي بجانبه
+    # 3) ابحث في البيئة الافتراضية venv بجانب المشروع
     for base in [app_dir, os.path.dirname(app_dir)]:
         venv_python = os.path.join(base, "venv", "Scripts", "python.exe")
         if os.path.isfile(venv_python):
             return venv_python
 
-    # 3) ابحث في PATH عن python.exe عادي
+    # 4) ابحث في PATH عن python.exe عادي
     python_in_path = shutil.which("python")
     if python_in_path:
         return python_in_path
 
-    # 4) آخر خيار: أعد sys.executable (سيفشل لكن على الأقل سيظهر خطأ واضح)
+    # 5) آخر خيار: أعد sys.executable (سيفشل لكن على الأقل سيظهر خطأ واضح)
     return sys.executable
 
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
@@ -177,7 +211,9 @@ class PipelineWorker(QThread):
             settings = QSettings("KiroAI", "Settings")
             use_gpu = settings.value("gpu_acceleration", True, type=bool)
             
-            env = os.environ.copy()
+            # إعداد بيئة التشغيل مع منع خطأ pyvenv.cfg
+            python_exe = _get_python_executable()
+            env = _get_python_env(python_exe)
             if not use_gpu:
                 env["CUDA_VISIBLE_DEVICES"] = ""
                 self.log_signal.emit("[ INFO ] GPU Acceleration : DISABLED (CPU Only)")
@@ -186,23 +222,27 @@ class PipelineWorker(QThread):
                 
             self.log_signal.emit("=" * 50)
             
-            # بناء الأمر
-            # نستخدم sys.executable لضمان استخدام نفس بيئة بايثون
-            base_script_paths = [
-                os.path.normpath(os.path.join(self.base_dir, "..", "run_project.py")),
-                os.path.normpath(os.path.join(self.base_dir, "run_project.py"))
-            ]
+            # بناء الأمر - البحث عن run_project (.pyc أولاً عند التشغيل كـ exe)
+            base_script_paths = []
+            if getattr(sys, 'frozen', False):
+                # نسخة مُجمَّعة (محمية)
+                base_script_paths.append(os.path.normpath(os.path.join(self.base_dir, "..", "run_project.pyc")))
+                base_script_paths.append(os.path.normpath(os.path.join(self.base_dir, "run_project.pyc")))
+            # نسخة المصدر (تطوير)
+            base_script_paths.append(os.path.normpath(os.path.join(self.base_dir, "..", "run_project.py")))
+            base_script_paths.append(os.path.normpath(os.path.join(self.base_dir, "run_project.py")))
             
-            script_path = base_script_paths[0]
+            script_path = None
             for p in base_script_paths:
                 if os.path.exists(p):
                     script_path = p
                     break
-                elif os.path.exists(p + "c"):
-                    script_path = p + "c"
-                    break
+            
+            if script_path is None:
+                self.finished_signal.emit(False, f"run_project not found in: {base_script_paths}")
+                return
 
-            command = [_get_python_executable(), "-u", script_path, "--mode", self.mode]
+            command = [python_exe, "-u", script_path, "--mode", self.mode]
             if self.nested_folders:
                 command.append("--nested")
             for p in self.target_paths:

@@ -16,18 +16,53 @@ elif sys.stdout.encoding != 'UTF-8':
         pass
 
 
+def _ensure_pth_file(python_dir):
+    """ضمان وجود ملف python311._pth بجانب python311.dll لمنع خطأ pyvenv.cfg."""
+    pth_file = os.path.join(python_dir, "python311._pth")
+    if not os.path.exists(pth_file):
+        try:
+            with open(pth_file, 'w', encoding='utf-8') as f:
+                f.write(".\n")
+                f.write("base_library.zip\n")
+        except OSError:
+            pass
+
+
+def _get_python_env(python_exe_path):
+    """إعداد متغيرات البيئة لتشغيل python.exe المُضمّن بدون خطأ pyvenv.cfg."""
+    env = os.environ.copy()
+    # تحقق: هل نحن داخل بيئة مُجمّدة أو أن python.exe في مجلد _internal
+    python_dir = os.path.dirname(python_exe_path)
+    if os.path.basename(python_dir) == "_internal" or getattr(sys, 'frozen', False):
+        # لا نستخدم PYTHONHOME لأنه يكسر استيراد المكتبات القياسية
+        env["PYTHONNOUSERSITE"] = "1"
+        env["PYTHONDONTWRITEBYTECODE"] = "1"
+        _ensure_pth_file(python_dir)
+    return env
+
+
 def _get_python_executable():
     """Find the real Python interpreter, not the frozen exe."""
     if not getattr(sys, 'frozen', False):
         return sys.executable
+
     app_dir = os.path.dirname(sys.executable)
+
+    # Check _internal/python.exe (bundled with PyInstaller)
+    internal_python = os.path.join(app_dir, "_internal", "python.exe")
+    if os.path.isfile(internal_python):
+        return internal_python
+
+    # Check app directory
     local_python = os.path.join(app_dir, "python.exe")
     if os.path.isfile(local_python):
         return local_python
+
     for base in [app_dir, os.path.dirname(app_dir)]:
         venv_python = os.path.join(base, "venv", "Scripts", "python.exe")
         if os.path.isfile(venv_python):
             return venv_python
+
     python_in_path = shutil.which("python")
     if python_in_path:
         return python_in_path
@@ -36,12 +71,13 @@ def _get_python_executable():
 
 def run_script(dir_name, script_name, description, folder_name=None, folder_path=None):
     """Executes a specific script inside its directory"""
+    # البحث عن النسخة المُجمَّعة .pyc إذا لم نجد النسخة الأصلية .py
+    if script_name.endswith('.py') and not os.path.exists(os.path.join(dir_name, script_name)):
+        pyc_name = script_name + 'c'  # file.py → file.pyc
+        if os.path.exists(os.path.join(dir_name, pyc_name)):
+            script_name = pyc_name
+
     script_path = os.path.join(dir_name, script_name)
-    
-    # Check for compiled version if original is missing
-    if not os.path.exists(script_path) and os.path.exists(script_path + "c"):
-        script_name += "c"
-        script_path += "c"
         
     print(f"\n{'-'*50}")
     print(f"[*] Executing: {description}")
@@ -53,12 +89,16 @@ def run_script(dir_name, script_name, description, folder_name=None, folder_path
     
     try:
         # Prepare command
-        command = [_get_python_executable(), "-u", script_name]
+        python_exe = _get_python_executable()
+        command = [python_exe, "-u", script_name]
         if folder_name:
             command.append(folder_name)
         if folder_path:
             command.append(folder_path)
             print(f"[*] Targeting Folder: {folder_name} ({folder_path})")
+
+        # إعداد بيئة التشغيل (منع خطأ pyvenv.cfg)
+        env = _get_python_env(python_exe)
 
         # CREATE_NO_WINDOW prevents black console windows when running as exe
         creation_flags = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
@@ -69,6 +109,7 @@ def run_script(dir_name, script_name, description, folder_name=None, folder_path
                                    text=True,
                                    encoding='utf-8',
                                    errors='replace',
+                                   env=env,
                                    creationflags=creation_flags)
         
         # Read output line by line and print it to our stdout

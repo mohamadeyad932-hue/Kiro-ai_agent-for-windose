@@ -257,10 +257,10 @@ def process_sub_clustering():
         best_k, best_sil = find_best_k(embeddings)
 
         if best_k is None or best_sil < SILHOUETTE_THRESHOLD:
-            print(f"     ✅ Folder is homogeneous (Sil={best_sil:.3f}). No sub-clustering needed.")
+            print(f"      Folder is homogeneous (Sil={best_sil:.3f}). No sub-clustering needed.")
             continue
 
-        print(f"     🔀 Sub-clustering into {best_k} groups (Sil={best_sil:.3f})")
+        print(f"      Sub-clustering into {best_k} groups (Sil={best_sil:.3f})")
 
         # الخطوة 4: التقسيم
         kmeans = KMeans(n_clusters=best_k, random_state=42, n_init=10)
