@@ -313,6 +313,15 @@ def run_clustering(moved_paths):
     print("=" * 60)
 
     for folder_name, folder_path in FOLDERS.items():
+        # حذف الملف القديم لتفادي تكرار بيانات من تجارب سابقة
+        import tempfile
+        old_script = os.path.join(tempfile.gettempdir(), "KiroAI_Data", "image_clusters", f"similar_{folder_name}_images.py")
+        if os.path.exists(old_script):
+            try:
+                os.remove(old_script)
+            except Exception:
+                pass
+
         # تحميل البيانات ديناميكيا لكل مجلد
         mod_files = dynamic_import(f"{folder_name}_images_files")
         mod_vectors = dynamic_import(f"{folder_name}_images_vectors")

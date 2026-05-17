@@ -270,7 +270,8 @@ def process_sub_clustering():
     فحص كل مجلد نصي أنشأه النظام في المرحلة الأولى
     وتقسيمه إلى مجلدات فرعية إذا احتوى على مجموعات مواضيع مختلفة
     """
-    json_path = os.path.join(BASE_DIR, "created_folders.json")
+    import tempfile
+    json_path = os.path.join(tempfile.gettempdir(), "KiroAI_Data", "created_folders.json")
 
     if not os.path.exists(json_path):
         print("[Sub-Cluster Text] No created_folders.json found. Nothing to sub-cluster.")

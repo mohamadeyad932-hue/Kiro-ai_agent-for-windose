@@ -189,21 +189,28 @@ def save_metadata(group_name, folder_path, files_count):
     """حفظ معلومات المجلد المنشأ في ملف JSON للواجهة"""
     import json
     import tempfile
+    import time
     json_path = os.path.join(tempfile.gettempdir(), "KiroAI_Data", "created_folders.json")
     data = {"created_folders": []}
     
     if os.path.exists(json_path):
-        try:
-            with open(json_path, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-        except: pass
+        for _ in range(5):
+            try:
+                with open(json_path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                break
+            except Exception as e:
+                print(f" [!] Failed to read report file (maybe locked), retrying... ({e})")
+                time.sleep(0.5)
+        else:
+            print(" [!] Could not read report file after 5 attempts. Starting fresh.")
             
     data["created_folders"].append({
         "group_name": group_name,
         "folder_path": folder_path,
         "files_count": files_count,
         "type": "text",
-        "timestamp": time.time() if 'time' in globals() else 0
+        "timestamp": time.time()
     })
     
     with open(json_path, 'w', encoding='utf-8') as f:

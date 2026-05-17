@@ -1,9 +1,9 @@
 # -*- mode: python ; coding: utf-8 -*-
 """
-Kiro AI - PyInstaller Build Spec (مع حماية الكود)
+Kiro AI - PyInstaller Build Spec (المطور والمحدث)
 ═══════════════════════════════════════════════
-يجب تشغيل compile_scripts.py أولاً لتوليد ملفات .pyc
-التشغيل:  python compile_scripts.py && pyinstaller build_exe.spec
+تم إصلاح مشاكل الانهيار ونقص ملفات PyTorch الديناميكية
+التشغيل: pyinstaller build_exe.spec
 """
 
 import os
@@ -56,12 +56,11 @@ rp_pyc = os.path.join(PROJECT_ROOT, 'run_project.pyc')
 if os.path.exists(rp_pyc):
     datas.append((rp_pyc, '.'))
 else:
-    # fallback: استخدم .py إذا لم يُجمَّع بعد
     datas.append((os.path.join(PROJECT_ROOT, 'run_project.py'), '.'))
 
 from PyInstaller.utils.hooks import collect_submodules
 
-# ─── الاستيرادات المخفية ───
+# ─── الاستيرادات المخفية (Hidden Imports) ───
 hiddenimports = [
     'PyQt6.QtWidgets', 'PyQt6.QtCore', 'PyQt6.QtGui', 'PyQt6.sip',
     'fitz', 'docx', 'PIL', 'PIL.Image',
@@ -75,9 +74,22 @@ hiddenimports = [
     'theme', 'translations', 'welcome_screen',
     'config_screen', 'processing_screen',
     'dashboard_screen', 'settings_screen', 'about_screen',
+    
+    # 🌟 [إصلاح] استدعاء ملفات الـ RPC المفقودة في نظام المجموعات
+    'torch.distributed.rpc',
+    
+    # 🌟 [إصلاح] استدعاء ملفات الـ Dynamo Polyfills المفقودة لتشغيل CLIPProcessor بأمان
+    'torch._dynamo.polyfills.fx',
+    'torch._dynamo.polyfills.builtins',
+    'torch._dynamo.polyfills.itertools',
+    'torch._dynamo.polyfills.os',
+    'torch._dynamo.polyfills.sys',
 ]
-# إجبار PyInstaller على تضمين كل ملفات PyTorch لتجنب أخطاء الاستيراد الديناميكي
-hiddenimports += collect_submodules('torch')
+
+# ⚠️ [تنبيه هامن جداً] تم تعطيل السطر التالي لمنع انهيار الذاكرة العشوائية (Access Violation)
+# hiddenimports += collect_submodules('torch')
+
+# تضمين باقي المكتبات الفرعية الضرورية الأخرى
 hiddenimports += collect_submodules('torchvision')
 hiddenimports += collect_submodules('transformers')
 hiddenimports += collect_submodules('sentence_transformers')
@@ -100,7 +112,7 @@ a = Analysis(
     runtime_hooks=[],
     excludes=[
         'matplotlib', 'tkinter', 'setuptools', 'pip', 'wheel',
-        # نمنع فقط الملف الدقيق الذي يفجر PyInstaller
+        # منع الملف الدقيق الذي يفجر ويقطع عملية البناء
         'torch.distributed.algorithms._optimizer_overlap',
         'triton', 'tensorboard', 'numba',
         'IPython', 'colorama', 'networkx'

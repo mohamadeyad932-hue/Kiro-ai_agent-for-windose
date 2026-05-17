@@ -176,6 +176,16 @@ def execute_pipeline(mode_choice, target_paths, nested=False):
     """Executes the processing pipeline for the given mode and paths"""
     start_time = time.time()
     
+    # تصفير ملف التقرير في بداية العملية
+    import tempfile
+    json_path = os.path.join(tempfile.gettempdir(), "KiroAI_Data", "created_folders.json")
+    if os.path.exists(json_path):
+        try:
+            os.remove(json_path)
+            print("[*] Cleared old report file (created_folders.json).")
+        except Exception as e:
+            print(f"[!] Warning: Could not clear old report file: {e}")
+            
     # Embedding & Clustering (Collect data from all paths)
     for name, path in target_paths.items():
         print(f"\n{'='*50}")
